@@ -1,0 +1,85 @@
+CONSTRUCT {
+     ?s ?p ?o . 
+     ?o ?q ?z. 
+     ?w ?r ?o .
+  }
+  WHERE {
+        ?s ?p ?o . 
+        FILTER (?s = :O || ?o = :O) 
+        OPTIONAL { ?o ?q ?z . }
+        OPTIONAL { ?w ?r ?o . }
+   }
+
+select * FROM <#ri> where {
+  <info:fedora/islandora:d548bf59-1bc6-4472-b589-cc44133dd4df> ?p2 ?o2 .
+  optional { ?o2 ?p3 ?o3 }
+}
+
+
+
+CONSTRUCT {
+     ?s ?p ?o . 
+     ?o ?q ?z. 
+     ?w ?r ?o .
+  }
+  WHERE {
+        ?s ?p ?o . 
+        FILTER (?s = <info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2> || ?o = <info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2>) 
+        OPTIONAL { ?o ?q ?z . }
+        OPTIONAL { ?w ?r ?o . }
+   }
+
+
+
+Este funciona bien
+
+select ?sujeto ?predicado ?objeto  from <#ri> 
+where{ 
+?sujeto ?predicado ?objeto. 
+?sujeto  ?predicado <info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2>.
+FILTER(regex(str( ?objeto), "info:fedora/", "i"))
+} 
+
+
+y este tambien
+
+SELECT ?sujeto ?predicado ?objeto  from <#ri> WHERE {
+    ?sujeto ?predicado ?objeto. 
+     ?sujeto  ?predicado <info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2>. 
+FILTER(regex(str( ?objeto), "info:fedora/", "i"))
+ OPTIONAL { <info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2>   ?predicado  ?objeto }
+}
+
+select * FROM <#ri> where {
+   ?s2 ?p2 <info:fedora/ontologies:f60e3156-0ff9-478e-8c2a-3c8f53533a16>.
+  optional { ?o2 ?p3 ?s2 }
+}
+Me de extraordinariamente
+
+"s2","p2","o2","p3"
+info:fedora/biodiversity:OccurrenceCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,info:fedora/islandora:070fb459-72bc-413c-ac6d-e2a1ff01f470,info:fedora/fedora-system:def/model#hasModel
+info:fedora/biodiversity:TaxonCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2,info:fedora/fedora-system:def/model#hasModel
+info:fedora/biodiversity:MaterialSampleCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,null,null
+info:fedora/biodiversity:LocationCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,null,null
+info:fedora/biodiversity:IdentificationCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,info:fedora/islandora:d548bf59-1bc6-4472-b589-cc44133dd4df,info:fedora/fedora-system:def/model#hasModel
+
+select * FROM <#ri> where {
+   ?s2 ?p2 <info:fedora/ontologies:f60e3156-0ff9-478e-8c2a-3c8f53533a16>.
+   ?s2 <info:fedora/fedora-system:def/model#label> ?label
+  optional { ?o2 ?p3 ?s2 }
+}
+"s2","p2","label","o2","p3"
+info:fedora/biodiversity:OccurrenceCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,Darwin Core Class Occurrence Content Model,info:fedora/islandora:070fb459-72bc-413c-ac6d-e2a1ff01f470,info:fedora/fedora-system:def/model#hasModel
+info:fedora/biodiversity:TaxonCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,Darwin Core Class Taxon Content Model ,info:fedora/islandora:fc13d250-b331-426c-bb89-2e7127ff1ff2,info:fedora/fedora-system:def/model#hasModel
+info:fedora/biodiversity:MaterialSampleCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,Darwin Core Class MaterialSample Content Model ,null,null
+info:fedora/biodiversity:LocationCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,Darwin Core Class Location Content Model,null,null
+info:fedora/biodiversity:IdentificationCModel,http://islandora.ca/ontology/relsext#hasLocalOntology,Darwin Core Class Identification Content Model ,info:fedora/islandora:d548bf59-1bc6-4472-b589-cc44133dd4df,info:fedora/fedora-system:def/model#hasModel
+
+
+select * FROM <#ri> where {
+  ?s2 ?p2 ?o2.
+   ?s2 ?p2 <info:fedora/ontologies:f60e3156-0ff9-478e-8c2a-3c8f53533a16>.
+   ?s2 <info:fedora/fedora-system:def/model#label> ?label.
+  optional { ?o2 ?p3 ?s2 }
+}
+

@@ -1,0 +1,10 @@
+name = "Islandora Ontologies"
+description = "Provides Ontologies Content Model and functions to define/edit local relations between objects on RELS-EXT"
+package = Islandora
+dependencies[] = islandora
+dependencies[] = islandora_basic_collection
+dependencies[] = islandora_solr
+dependencies[] = islandora_solr_metadata
+dependencies[] = block
+version = 7.x-0.1
+core = 7.x

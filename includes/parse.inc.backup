@@ -1,0 +1,803 @@
+<?php
+** 
+ * Returns the list of relationships that can be added to this object.
+ *
+ * @param string $object_pid
+ *    the Fedora pid of the object to which the relationship will apply
+ */
+
+function islandora_ontologies_get_possible_relationships($object_pid){
+
+$list_term = array();
+$vocabulary =  islandora_ontologies_get_current_vocabulary();
+foreach ($vocabulary['terms'] as $term) {
+  	list($term_ns, $term_local_name) =  islandora_ontologies_rdfx_split_uri($term['uri']);
+	if (isset($term['label'])) {
+	  if (isset($term['label']['en'])) {
+		$label = $term['label']['en'];
+	  } else {
+		$label = reset($term['label']);
+	  }
+	} else {
+	  $label = "";
+	}
+//	$list_term[$term_local_name] = t($label);
+	$list_term[$term['uri']] = t($label);
+}
+/*
+  return array(
+    'isDraftOf' => t('is draft of'),
+    'hasDraft' => t('has draft'),
+    'isSummaryOf' => t('is summary of'),
+    'hasSummary' => t('has summary'),
+    'isUpdateOf' => t('is updated edition of'),
+    'hasUpdate' => t('has updated edition'),
+    'isResponseTo' => t('is response to'),
+    'hasResponse' => t('has response'),
+  );
+*/
+  array_multisort($list_term, SORT_ASC);
+
+  return $list_term;
+}
+
+
+/** 
+ * Implements hook_islandora_view_object().
+ 
+function islandora_ontologies_islandora_view_object($object, $page_number, $page_size) {
+  $output = theme('islandora_ontologies_related_objects', array('islandora_object' => $object));
+  return array('Related objects' => $output);
+}
+*/
+
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function islandora_ontologies_block_info() {
+  // This hook returns an array, each component of which is an array of block
+  // information. The array keys are the 'delta' values used in other block
+  // hooks.
+
+  // The required block information is a block description, which is shown
+  // to the site administrator in the list of possible blocks. You can also
+  // provide initial settings for block weight, status, etc.
+
+  // Many options are defined in hook_block_info():
+//$blocks['example_configurable_text'] = array(
+$blocks['rel_objects'] = array(
+    // info: The name of the block.
+  'info' => t('Related objects'),
+    // Block caching options (per role, per user, etc.)
+//  'cache' => DRUPAL_CACHE_PER_ROLE, // default
+);
+
+  // This sample shows how to provide default settings. In this case we'll
+  // enable the block in the first sidebar and make it visible only on
+  // 'node/*' pages. See the hook_block_info() documentation for these.
+//$blocks['related_objects'] = array(
+//    'info' => t('Related objects1'),
+//  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ *
+ * This hook declares configuration options for blocks provided by this module.
+ */
+function islandora_ontologies_block_configure($delta = '') {
+  // The $delta parameter tells us which block is being configured.
+  // In this example, we'll allow the administrator to customize
+  // the text of the 'configurable text string' block defined in this module.
+  $form = array();
+  if ($delta == 'rel_objects') {
+    // All we need to provide is the specific configuration options for our
+    // block. Drupal will take care of the standard block configuration options
+    // (block title, page visibility, etc.) and the save button.
+    $form['islandora_ontologies_ontology_pid'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Object PID'),
+      '#size' => 60,
+      '#description' => t('The PID of object which contains ontology datastream.'),
+      '#default_value' => variable_get('islandora_ontologies_ontology_pid',  t('islandora:ontology')),
+    );
+    $form['islandora_ontologies_ontology_dsid'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Datastream DSID'),
+      '#size' => 60,
+      '#description' => t('The DSID of datastream which contains ontology xml.'),
+      '#default_value' => variable_get('islandora_ontologies_ontology_dsid',  t('ONTOLOGY')),
+    );
+    $form['islandora_ontologies_ontology_view'] = array(
+      '#type' => 'textarea',
+      '#disabled' => 'TRUE',
+      '#title' => t('Current ontology'),
+//      '#description' => t('The relations provided by ontology.'),
+//      '#default_value' => get_current_ontology('islandora:ontology', 'ONTOLOGY'),
+      '#default_value' =>  islandora_ontologies_get_current_ontology(variable_get('islandora_ontologies_ontology_pid',  t('islandora:ontology')), variable_get('islandora_ontologies_ontology_dsid',  t('ONTOLOGY'))),
+
+    );
+  }
+  return $form;
+}
+
+function islandora_ontologies_create_ontology($PID){
+  include_once('arc2/ARC2.php');
+  $pid = variable_get('islandora_ontologies_ontology_pid',  t('islandora:ontology'));
+  $dsid = variable_get('islandora_ontologies_ontology_dsid',  t('ONTOLOGY'));
+  $fedora_object = islandora_object_load($pid);
+  if (!$fedora_object) {
+    return (FALSE);
+  }
+  $datastream = $fedora_object[$dsid];
+  if (!$datastream) {
+    return (FALSE);
+  }
+  $namespaces = array();
+  $parser = ARC2::getRDFParser();
+  $fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
+  $xmlfilelink = $fedora_url."/objects/".$pid."/datastreams/".$dsid."/content";
+  $parser->parse($xmlfilelink);
+  $triples = $parser->getTriples();
+  $terms = islandora_ontologies_rdfx_fetch_terms($triples);
+  foreach ($parser->parser->nsp as $uri => $prefix) {
+        $namespaces[$prefix] = $uri;
+  }
+  $vocabulary = array(
+      'terms' => $terms,
+      'namespaces' => $namespaces,
+  );
+  return ($vocabulary);
+}
+
+
+
+
+
+
+
+function islandora_ontologies_get_current_vocabulary() {
+  $ireo_voc = &drupal_static(__FUNCTION__);
+
+  if (!isset($ireo_voc)) {
+    if ($cache = cache_get('islandora_ontologies_ontology_voc')) {
+      $ireo_voc = $cache->data;
+    }
+    else {
+      $ireo_voc =  islandora_ontologies_create_vocabulary();
+      cache_set('islandora_ontologies_ontology_voc', $ireo_voc, 'cache');
+    }
+  }
+  return $ireo_voc;
+}
+
+function islandora_ontologies_update_current_vocabulary() {
+  $ireo_voc = &drupal_static(__FUNCTION__);
+
+  $ireo_voc =  islandora_ontologies_create_vocabulary();
+  cache_set('islandora_ontologies_ontology_voc', $ireo_voc, 'cache');
+  return(TRUE);
+}
+
+function islandora_ontologies_current_ontology_inarray(){
+
+  $vocabulary = islandora_ontologies_get_current_vocabulary();
+/* $ontology = [property] [namespace] [label] [comment] [superproperty] [inverseof] */
+  $ontology = array();
+  $k = 0;
+  foreach ($vocabulary['terms'] as $term) {
+
+	list($term_ns, $term_local_name) =  islandora_ontologies_rdfx_split_uri($term['uri']);
+	$ontology[$k]['property'] = $term_local_name;
+	$ontology[$k]['namespace'] = $term_ns;
+
+	$ontology[$k]['label'] = "";
+	if (isset($term['label'])) {
+	  if (isset($term['label']['en'])) {
+		$ontology[$k]['label'] = $term['label']['en'];
+	  } else {
+		$ontology[$k]['label'] = reset($term['label']);
+	  }
+	}
+	$ontology[$k]['comment'] = "";
+	if (isset($term['comment'])) {
+	  if (isset($term['comment']['en'])) {
+		$ontology[$k]['comment'] = $term['comment']['en'];
+	  } else {
+		$ontology[$k]['comment'] = reset($term['comment']);
+	  }
+	}
+	$ontology[$k]['superproperty'] = "";
+	if (isset($term['superproperty'][0])) {
+	  list($sb_ns, $sb_name) =  islandora_ontologies_rdfx_split_uri($term['superproperty'][0]);
+	  $ontology[$k]['superproperty'] = $sb_name;
+	}
+	$ontology[$k]['inverseof'] = "";
+	if (isset($term['inverse'][0])) {
+	  list($sb_ns, $sb_name) =  islandora_ontologies_rdfx_split_uri($term['inverse'][0]);
+	  $ontology[$k]['inverseof'] = $sb_name;
+	}
+	$k++;
+  }
+  return ($ontology);
+}
+
+
+/* render ontology output for block view */
+function islandora_ontologies_get_current_ontology($pid,$dsid){
+
+	$ontology =  islandora_ontologies_current_ontology_inarray();
+	$servoc ="";
+
+	foreach ($ontology as $term){
+		$servoc .= '"<'.$term['property'].'>"'." = ";
+		$servoc .= $term['label'];
+		$servoc .= ": ".$term['comment'];
+		$servoc .= "\n";
+		$servoc .= "SubPropertyOf: ".$term['superproperty'];
+		$servoc .= " - InverseOf: ".$term['inverseof'];
+		$servoc .= "\n\n";
+	}
+	return ($servoc);
+}
+
+/* render ontology output for lightbox view */
+function islandora_ontologies_ser_current_ontology(){
+
+	$ontology = current_ontology_inarray();
+	$servoc ="<table>";
+	$servoc .= "<tr>";
+	$servoc .= "<td>Property</td>";
+	$servoc .= "<td>Label</td>";
+	$servoc .= "<td>Description</td>";
+	$servoc .= "<td>SuperProperty</td>";
+	$servoc .= "<td>Inverse Of</td>";
+	$servoc .= "</tr>";
+
+	foreach ($ontology as $term){
+
+		$servoc .= "<tr>";
+		$servoc .= "<td>".htmlentities($term['property'])."</td>";
+		$servoc .= "<td>".htmlentities($term['label'])."</td>";
+		$servoc .= "<td>".htmlentities($term['comment'])."</td>";
+		$servoc .= "<td>".htmlentities($term['superproperty'])."</td>";
+		$servoc .= "<td>".htmlentities($term['inverseof'])."</td>";
+		$servoc .= "</tr>";
+	}
+
+	$servoc .= "</table>";
+
+  return ($servoc);
+}
+
+
+
+/////////////////////////////
+////////////////////////////
+
+function  islandora_ontologies_rdfx_query_find_literal(&$model, $queries) {
+  $literal = array();
+  foreach ($queries as $query) {
+    list($s, $p, $o) = $query;
+    $triples =  islandora_ontologies_rdfx_query_find_all($model, $s, $p, $o);
+    // We create an associative array based on the language code of the
+    // literal. The language codes Drupal uses are specified in includes/iso.inc.
+    foreach ($triples as $triple) {
+      if ($triple['o_lang'] !== '') {
+        // Chinese and Portuguese are the only languages with a >2 letter
+        // langcode.
+        if (preg_match('/(zh-hans)|(zh-hant)|(pt-pt)|(pt-br)/', $triple['o_lang'])) {
+          $langcode = $triple['o_lang'];
+        }
+        // Remove the region code if it is used (i.e. en-US is changed to en).
+        else {
+          $lang_array = explode('-', $triple['o_lang']);
+          $langcode = !empty($lang_array[0]) ? $lang_array[0] : $triple['o_lang'];
+        }
+      }
+      else {
+        $langcode = 'und';
+      }
+      $literal[$langcode] = $triple['o'];
+    }
+  }
+  return $literal;
+}
+
+function islandora_ontologies_rdfx_query_find_all(&$model, $s, $p, $o) {
+  $result = array();
+  foreach ($model as $triple) {
+    if (!is_null($s) && $s != '?' && ($triple['s'] != $s)) continue;
+    if (!is_null($p) && $p != '?' && ($triple['p'] != $p)) continue;
+    if (!is_null($o) && $o != '?' && ($triple['o'] != $o)) continue;
+    $result[] = $triple;
+  }
+  return $result;
+}
+
+
+////////////////////////////////
+/////////////////////////////////
+function islandora_ontologies_rdfx_fetch_terms(&$model) {
+  $terms = array();
+  $term_uris = array();
+
+  // Retrieve the queries for term retrieval.
+  $term_type_group = islandora_ontologies_iowl_term_types();
+
+      $property = $term_type_group['term_types']['property'];
+      $query = array(
+        array('?', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type', $property['uri']),
+      );
+      $term_uris = islandora_ontologies_rdfx_query_find_uris($model, $query);
+      // Add term details and various relationships for each term, as defined
+      // in rdfx_term_types() and altered by hook_rdfx_term_types_alter().
+      $query_x = array();
+      foreach ($term_uris as $term_uri) {
+        $terms[$term_uri] = islandora_ontologies_evoc_query_for_term_description($model, $term_uri);
+        foreach ($term_type_group['description'] as $property => $queries) {
+          foreach ($queries as $predicate_uri => $query_types) {
+            foreach ($query_types as $query_type) {
+              switch ($query_type) {
+                case 'subject':
+                  $query_x[$term_uri][$property][] = array('?', $predicate_uri, $term_uri);
+                  break;
+                case 'object':
+                  $query_x[$term_uri][$property][] = array($term_uri, $predicate_uri, '?');
+                  break;
+              }
+            }
+          }
+          $terms[$term_uri][$property] = islandora_ontologies_rdfx_query_find_uris($model, $query_x[$term_uri][$property]);
+        }
+      } 
+  array_multisort($terms, SORT_ASC);
+
+  return $terms;
+}
+
+function islandora_ontologies_rdfx_query_find_uris(&$model, $queries) {
+  $uris = array();
+  foreach ($queries as $query) {
+    list($s, $p, $o) = $query;
+    $result = islandora_ontologies_rdfx_query_find_all($model, $s, $p, $o);
+    foreach ($result as $triple) {
+      if ($s == '?' && $triple['s_type'] == 'uri') {
+        $uris[] = $triple['s'];
+      }
+      if ($p == '?') {
+        $uris[] = $triple['p'];
+      }
+      if ($o == '?' && $triple['o_type'] == 'uri') {
+        $uris[] = $triple['o'];
+      }
+    }
+  }
+  return array_unique($uris);
+}
+
+
+function islandora_ontologies_evoc_query_for_term_description(&$model, $uri) {
+  $label = islandora_ontologies_rdfx_query_find_literal($model, array(
+    array($uri, 'http://www.w3.org/2000/01/rdf-schema#label', '?')
+  ));
+
+  $comment = islandora_ontologies_rdfx_query_find_literal($model, array(
+///    array($uri, 'http://www.w3.org/2004/02/skos/core#definition', '?'),
+    array($uri, 'http://www.w3.org/2000/01/rdf-schema#comment', '?'),
+  ));
+
+  return array(
+      'uri' => $uri,
+      'label' => $label,
+      'comment' => $comment,
+  );
+}
+
+/** All OWL terms used must be valid for OWL LITE 
+* @see http://sourceforge.net/apps/mediawiki/ecm/index.php?title=Ontology_Language#Example_of_a_simple_ontology 
+*/
+function islandora_ontologies_iowl_term_types($reset = FALSE) {
+  static $types;
+  if ($reset || !isset($types)) {
+
+    $types['term_types'] = array();
+    $term_details = '';
+    $types['term_types'] = array (
+      'property' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#ObjectProperty',
+      ),
+     /* 'class' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#Class',
+      ),
+      'restriction' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#Restriction',
+      ),
+      'onproperty' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#onProperty',
+      ),
+      'onclass' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#onClass',
+      ),
+      'allvaluesfrom' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#allValuesFrom',
+      ),
+      'somevaluesfrom' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#someValuesFrom',
+      ),
+      'cardinality' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#Cardinality',
+      ),
+      'mincardinality' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#minCardinality',
+      ),
+      'maxcardinality' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#maxCardinality',
+      ),*/
+    );
+
+    $types['description'] = array(
+      'superproperty' => array(
+        'http://www.w3.org/2000/01/rdf-schema#subPropertyOf' => array(
+          'object',
+        ),
+      ),
+      'inverse' => array(
+        'http://www.w3.org/2002/07/owl#inverseOf' => array(
+          'object',
+        ),
+      ),
+    );
+  }
+  return $types;
+}
+
+
+
+
+function islandora_ontologies_rdfx_term_types($reset = FALSE) {
+
+  static $types;
+  if ($reset || !isset($types)) {
+    $types['classes']['term_types'] = array();
+    $types['properties']['term_types'] = array();
+
+    $term_details = '';
+
+    // @todo Should the inference consider subProp and subClass relationships
+    // as well. ie. should all OWL classes also have the type RDFS Class
+
+    // @todo Switch to drupal cache
+    $types['classes']['term_types'] = array(
+      'rdfs_class' => array(
+        'uri' => 'http://www.w3.org/2000/01/rdf-schema#Class',
+        'inference' => array(
+          'http://www.w3.org/2000/01/rdf-schema#subClassOf' => array(
+            'subject',
+            'object',
+          ),
+          'http://www.w3.org/2000/01/rdf-schema#domain' => array(
+            'object',
+          ),
+          'http://www.w3.org/2000/01/rdf-schema#range' => array(
+            'object',
+          ),
+        ),
+      ),
+      'owl_class' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#Class',
+        'inference' => array(
+          'http://www.w3.org/2002/07/owl#equivalentClass' => array(
+            'subject',
+            'object',
+          ),
+          'http://www.w3.org/2002/07/owl#disjointWith' => array(
+            'subject',
+            'object',
+          ),
+        ),
+      ),
+    );
+
+    $types['properties']['term_types'] = array (
+      'rdf_property' => array(
+        'uri' => 'http://www.w3.org/1999/02/22-rdf-syntax-ns#Property',
+        'inference' => array(
+          'http://www.w3.org/2000/01/rdf-schema#domain' => array(
+            'subject',
+          ),
+          'http://www.w3.org/2000/01/rdf-schema#range' => array(
+            'subject',
+          ),
+          'http://www.w3.org/2000/01/rdf-schema#subPropertyOf' => array(
+            'subject',
+            'object',
+          ),
+          'http://www.w3.org/2002/07/owl#equivalentProperty' => array(
+            'subject',
+            'object',
+          ),
+          'http://www.w3.org/2002/07/owl#inverseOf' => array(
+            'subject',
+            'object',
+          ),
+        ),
+      ),
+      'owl_property_datatype' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#DatatypeProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_object' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#ObjectProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_functional' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#FunctionalProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_inverse_functional' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#InverseFunctionalProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_symmetric' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#SymmetricProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_asymmetric' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#AsymmetricProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_annotation' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#AnnotationProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_reflexive' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#ReflexiveProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_irreflexive' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#IrreflexiveProperty',
+        'inference' => array(
+        ),
+      ),
+      'owl_property_transitive' => array(
+        'uri' => 'http://www.w3.org/2002/07/owl#TransitiveProperty',
+        'inference' => array(
+        ),
+      ),
+    );
+
+    $types['classes']['description'] = array(
+      'superclass' => array(
+        'http://www.w3.org/2000/01/rdf-schema#subClassOf' => array(
+          'object',
+        ),
+      ),
+      'disjoint' => array(
+        'http://www.w3.org/2002/07/owl#disjointWith' => array(
+          'object',
+        ),
+      ),
+    );
+
+    $types['properties']['description'] = array(
+      'domain' => array(
+        'http://www.w3.org/2000/01/rdf-schema#domain' => array(
+          'object',
+        ),
+      ),
+      'range' => array(
+        'http://www.w3.org/2000/01/rdf-schema#range' => array(
+          'object',
+        ),
+      ),
+      'superproperty' => array(
+        'http://www.w3.org/2000/01/rdf-schema#subPropertyOf' => array(
+          'object',
+        ),
+      ),
+      'inverse' => array(
+        'http://www.w3.org/2002/07/owl#inverseOf' => array(
+          'object',
+        ),
+      ),
+    );
+//    drupal_alter('rdfx_term_types', $types);
+  }
+
+  return $types;
+}
+
+///////////////////////////////
+//////////////////////////////////
+function islandora_ontologies_rdfx_split_uri ($uri) {
+  include_once('arc2/ARC2.php');
+
+  $parts = ARC2::splitURI($uri);
+  return $parts;
+}
+
+
+function islandora_ontologies_splitURI($v) {
+    /* the following namespaces may lead to conflated URIs,
+     * we have to set the split position manually
+    */
+    if (strpos($v, 'www.w3.org')) {
+      $specials = array(
+        'http://www.w3.org/XML/1998/namespace',
+        'http://www.w3.org/2005/Atom',
+        'http://www.w3.org/1999/xhtml',
+      );
+      foreach ($specials as $ns) {
+        if (strpos($v, $ns) === 0) {
+          $local_part = substr($v, strlen($ns));
+          if (!preg_match('/^[\/\#]/', $local_part)) {
+            return array($ns, $local_part);
+          }
+        }
+      }
+    }
+    /* auto-splitting on / or # */
+    //$re = '^(.*?)([A-Z_a-z][-A-Z_a-z0-9.]*)$';
+    if (preg_match('/^(.*[\/\#])([^\/\#]+)$/', $v, $m)) return array($m[1], $m[2]);
+    /* auto-splitting on last special char, e.g. urn:foo:bar */
+    if (preg_match('/^(.*[\:\/])([^\:\/]+)$/', $v, $m)) return array($m[1], $m[2]);
+    return array($v, '');
+  }
+
+
+
+/**
+ * Implements hook_block_save().
+ *
+ * This hook declares how the configured options for a block
+ * provided by this module are saved.
+ */
+function islandora_ontologies_block_save($delta = '', $edit = array()) {
+  // We need to save settings from the configuration form.
+  // We need to check $delta to make sure we are saving the right block.
+
+  if ($delta == 'rel_objects') {
+    // Have Drupal save the string to the database.
+    variable_set('islandora_ontologies_ontology_pid', $edit['islandora_ontologies_ontology_pid']);
+    variable_set('islandora_ontologies_ontology_dsid', $edit['islandora_ontologies_ontology_dsid']);
+    update_current_vocabulary();
+  }
+  return;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function islandora_ontologies_block_view($delta = '') {
+  //The $delta parameter tells us which block is being requested.
+  switch ($delta) {
+ //**//    case 'example_configurable_text':
+ //**//      // The subject is displayed at the top of the block. Note that it
+ //**//      // should be passed through t() for translation. The title configured
+ //**//      // for the block using Drupal UI supercedes this one.
+ //**//      $block['subject'] = t('Title of first block (example_configurable_text)');
+ //**//      // The content of the block is typically generated by calling a custom
+ //**//      // function.
+ //**//      $block['content'] = islandora_ontologies_contents($delta);
+ //**//      break;
+    case 'rel_objects':
+      $block['subject'] = t('Title of block (rel_objects)');
+//      $block['content'] = islandora_ontologies_contents($delta);
+      $block['content'] = theme('islandora_ontologies_block');
+      break;
+ //**//    case 'example_uppercase':
+ //**//      $block['subject'] = t("uppercase this please");
+ //**//      $block['content'] = t("This block's title will be changed to uppercase. Any other block with 'uppercase' in the subject or title will also be altered. If you change this block's title through the UI to omit the word 'uppercase', it will still be altered to uppercase as the subject key has not been changed.");
+ //**//      break;
+  }
+  return $block;
+}
+
+/**
+ * A module-defined block content function.
+ */
+function islandora_ontologies_contents($which_block) {
+  switch ($which_block) {
+    case 'rel_objects':
+      // Modules would typically perform some database queries to fetch the
+      // content for their blocks. Here, we'll just use the variable set in the
+      // block configuration or, if none has set, a default value.
+      // Block content can be returned in two formats: renderable arrays
+      // (as here) are preferred though a simple string will work as well.
+      // Block content created through the UI defaults to a string.
+
+//	$islandora_object = array('islandora_object' => NULL);
+//  $repository = $islandora_object->repository;
+//  $rels = $islandora_object->relationships->get();
+//  $output = theme('islandora_ontologies_related_objects', array('islandora_object' => $object));
+//  return array('Related objects' => $output);
+	return "TEST";	
+//      return array('#markup' => variable_get('islandora_ontologies_string',  t('A default value. This block was created at %time', array('%time' => date('c')))));
+
+
+ //**//    case 'example_empty':
+      // It is possible that a block not have any content, since it is
+      // probably dynamically constructed. In this case, Drupal will not display
+      // the block at all. This block will not be displayed.
+ //**//      return;
+  }
+}
+
+/*
+ * The following hooks can be used to alter blocks
+ * provided by your own or other modules.
+ */
+
+/**
+ * Implements hook_block_list_alter().
+ *
+ * This hook allows you to add, remove or modify blocks in the block list. The
+ * block list contains the block definitions. This example requires
+ * search module and the search block enabled
+ * to see how this hook implementation works.
+ *
+ * You may also be interested in hook_block_info_alter(), which allows changes
+ * to the behavior of blocks.
+ */
+function islandora_ontologies_block_list_alter(&$blocks) {
+  // We are going to make the search block sticky on bottom of regions. For
+  // this example, we will modify the block list and append the search block at
+  // the end of the list, so even if the administrator configures the block to
+  // be on the top of the region, it will demote to bottom again.
+//**//  foreach ($blocks as $bid => $block) {
+//**//    if (($block->module == 'search') && ($block->delta == 'form')) {
+//**//      // Remove the block from the list and append to the end.
+//**//      unset($blocks[$bid]);
+//**//      $blocks[$bid] = $block;
+//**//      break;
+//**//    }
+//**//  }
+}
+
+/**
+ * Implements hook_block_view_alter().
+ *
+ * This hook allows you to modify the output of any block in the system.
+ *
+ * In addition, instead of hook_block_view_alter(), which is called for all
+ * blocks, you can also use hook_block_view_MODULE_DELTA_alter() to alter a
+ * specific block. To change only our block using
+ * hook_block_view_MODULE_DELTA_alter, we would use the function:
+ * block_example_block_view_block_example_example_configurable_text_alter()
+ *
+ * We are going to uppercase the subject (the title of the block as shown to the
+ * user) of any block if the string "uppercase" appears in the block title or
+ * subject. Default block titles are set programmatically in the subject key;
+ * titles created through the UI are saved in the title key. This module creates
+ * an example block to demonstrate this effect (default title set
+ * programmatically as subject).  You can also demonstrate the effect of this
+ * hook by creating a new block whose title has the string 'uppercase' in it
+ * (set as title through the UI).
+ */
+function islandora_ontologies_block_view_alter(&$data, $block) {
+  // We'll search for the string 'uppercase'.
+//**//  if ((!empty($block->title) && stristr($block->title, 'uppercase')) || (!empty($data['subject']) && stristr($data['subject'], 'uppercase'))) {
+//**//    // This will uppercase the default title.
+//**//    $data['subject'] = isset($data['subject']) ? drupal_strtoupper($data['subject']) : '';
+//**//    // This will uppercase a title set in the UI.
+//**//    $block->title = isset($block->title) ? drupal_strtoupper($block->title) : '';
+//**//  }
+}
+/**
+ * @} End of "defgroup block_example".
+ */
