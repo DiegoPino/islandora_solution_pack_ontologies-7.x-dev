@@ -12,7 +12,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	}	  
 	$currentrelations=islandora_ontologies_get_current_localrelations($islandora_object_pid);
 	$rows=array();
-	
+	dpm($currentrelations);
 	foreach ($currentrelations as $o){
 		$row=array();
 		$row['namespace']['#markup'] = $o['predicate']['namespace']. " (xmlns:".$o['predicate']['alias'].")";
@@ -22,10 +22,16 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 			try {
 				$target_object =islandora_object_load($o['object']['value']);
 				$target_object_pid=$o['object']['value'];
-				$target_object_link=l(t('@label (@pid)', array('@label' => $target_object['label'], '@pid' => $o['object']['value'])), "islandora/object/{$target_object_pid}");
+				if ($target_object)
+					{
+						
+						
+				$target_object_link=l(t('@label (@pid)', array('@label' =>$target_object->label, '@pid' =>$target_object_pid)), "islandora/object/{$target_object_pid}/manage/relationships");
+					}
+					
 			}
 			catch (Exception $e) {
-				$target_object_link=drupal_set_message('Error, Object does not exist!');
+				$target_object_link=t('Error, Object (@pid) does not longer exist!',array('@pid'=>$target_object_pid));
 				continue;
 				;
 			}
@@ -52,7 +58,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 			'#tree' => TRUE,
 			'#title' => t('List relationships'),
 			'#header' => array(
-				t('Namespace'),t('Property'), t('Object'),t('Conforms Restriction')
+				t('Namespace'),t('Property'), t('Object'),t('Delete')
 			),
 			'#theme' => 'islandora_ontologies_ontology_management_table',
 			'rows' =>$rows,

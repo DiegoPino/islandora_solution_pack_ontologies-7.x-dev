@@ -148,7 +148,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, array &$form_state){	
 	$ontologyobject=islandora_object_load($form_state['ontologyobject_pid']);
 	$ontologyobject_pid=$ontologyobject->id;
-	dpm($ontologyobject_pid);
+	
 	foreach ($form_state['values']['table']['rows'] as $pid => $properties) {
 		unset($subject);
 		unset($rels);
@@ -162,7 +162,7 @@ function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, ar
 		
 		if ($subject) 
 		{  
-			dpm($properties);
+			
 	
 			//@TODO allow multiple haslocalOntology relations on tha same contentmodel to different ontology objects.
 		    //This means we must check if ontologies does not have the same internal predicate_uri, if so this could lead to erroneous interpretation of applied relations between objects.	
