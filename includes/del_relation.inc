@@ -14,6 +14,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	$rows=array();
 	//dpm($currentrelations);
 	foreach ($currentrelations as $o){
+		$target_object_link="";
 		$row=array();
 		$row['namespace']['#markup'] = $o['predicate']['namespace']. " (xmlns:".$o['predicate']['alias'].")";
 		$row['relationship']['#markup'] = $o['predicate']['value'];
@@ -38,18 +39,36 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 		}
 		else
 		{
-			$target_object_link=$o['object']['literal']? t('literal: (@lit)',array('@lit'=>$o['object']['literal'])): " ";
+			$target_object_link_lit=$o['object']['literal']? t('literal: (@lit)',array('@lit'=>$o['object']['literal'])): " ";
 			
 		}
-		
-		$row['object']['#markup'] = $target_object_link;
-		$row['delete']['#markup'] = l(t('Delete'), islandora_ontologies_get_delete_path($islandora_object_pid, urlencode($o['predicate']['namespace']), $o['predicate']['value'], $o['object']['value']));
+		if (!empty($target_object_link))
+			{
+			$row['object']['#markup'] = $target_object_link;
+			$row['delete']['#markup'] = l(t('Delete'), islandora_ontologies_get_delete_path($islandora_object_pid, urlencode($o['predicate']['namespace']), $o['predicate']['value'], $o['object']['value']));
+			}
+		elseif (!empty($target_object_link_lit))
+			{
+				$row['object']['#markup'] = $target_object_link_lit;//@todo manage literals
+				$row['delete']['#markup'] = "";
+				
+			}
+		else//We don´t know what to do with this relation, maybe it´s a flag only!
+			{
+				$row['object']['#markup']="";
+				$row['delete']['#markup'] ="";
+			}	
 		if ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/model#') {
 			$row['delete']['#markup'] = t('Can\'t delete fedora model.');
 		}
 		if ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/relations-external#' and $o['predicate']['value'] == 'isMemberOfCollection') {
 			$row['delete']['#markup'] = t('Manage from collection object');
 		}
+		if ($o['predicate']['namespace'] == 'http://islandora.ca/ontology/relsext#') {
+			$row['delete']['#markup'] = t('Manage from object policy');
+		}
+		
+		
 		$rows[]=$row;
 	};
 	
