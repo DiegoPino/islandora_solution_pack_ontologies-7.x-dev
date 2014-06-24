@@ -12,7 +12,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	}	  
 	$currentrelations=islandora_ontologies_get_current_localrelations($islandora_object_pid);
 	$rows=array();
-	dpm($currentrelations);
+	//dpm($currentrelations);
 	foreach ($currentrelations as $o){
 		$row=array();
 		$row['namespace']['#markup'] = $o['predicate']['namespace']. " (xmlns:".$o['predicate']['alias'].")";
