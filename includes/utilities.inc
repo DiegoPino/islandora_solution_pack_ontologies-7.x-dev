@@ -882,10 +882,51 @@ function islandora_ontologies_get_all_for_cmodel($contentmodelpid)
 			
 			}
 		}
-	return 	$return_rels;
-		
-		
-		
-		
+	return 	$return_rels;	
 	}
+/**
+* Let´s traverse this graph and find where how long the distance is!		
+*/	
+function islandora_ontologies_get_graph_path($contentmodelpid)
+	{
+		$module_path = drupal_get_path('module', 'islandora_ontologies');
+		include_once($module_path.'/arc2/ARC2.php');
+		include_once($module_path.'/Graphite/Graphite.php');	
+		$subject="info/fedora:".$contentmodelpid;
+		
+		
+		try {
+			$contentmodel_object =islandora_object_load($contentmodelpid);
+			}
+			catch (Exception $e) 
+			{
+			return;	
+			}	
+		if ($contentmodel_object)	
+			{
+		$subject_associated_ontologies_pids=islandora_ontologies_get_associated_ontologies_for_cmodel($contentmodel_object);
+		
+		foreach($subject_associated_ontologies_pids as $PID=>$label)
+		{
+		
+			unset($ontology_object);
+			$ontology_object=islandora_object_load($PID);
+			if (!$ontology_object) {
+				drupal_set_message("Ontology object doesn't exist.");
+				drupal_not_found();
+				continue;
+			}	
+			$ontology_label=$ontology_object->label;//We already have this as $label, but it does not hurt to recheck
+		
+			$fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
+			$xmlfilelink = $fedora_url."/objects/".$PID."/datastreams/ONTOLOGY/content";
+			$graph = new Graphite();//@TODO Chek if it´s posible to combine all ontologies in one Graphite object and parse the whole thing 
+			$graph->load($xmlfilelink);
+			//dpm($graph->dumpText());
+	
+		}}
+}	
+	
+	
+	
 	
