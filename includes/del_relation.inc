@@ -28,6 +28,16 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 						
 						
 				$target_object_link=l(t('@label (@pid)', array('@label' =>$target_object->label, '@pid' =>$target_object_pid)), "islandora/object/{$target_object_pid}/manage/relationships");
+				$row['object']['#markup'] = $target_object_link;
+				$row['delete']['#markup'] = l(t('Delete'), islandora_ontologies_get_delete_path($islandora_object_pid, urlencode($o['predicate']['namespace']), $o['predicate']['value'], $o['object']['value']));
+			
+					}
+					else
+					{
+					$target_object_link=t('Wrong relation, Object (@pid) does not longer exist!',array('@pid'=>$target_object_pid));	
+					$row['object']['#markup'] = $target_object_link;
+					$row['delete']['#markup'] = l(t('Delete'), islandora_ontologies_get_delete_path($islandora_object_pid, urlencode($o['predicate']['namespace']), $o['predicate']['value'], $o['object']['value']));
+			
 					}
 					
 			}
@@ -40,24 +50,12 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 		else
 		{
 			$target_object_link_lit=$o['object']['literal']? t('literal: (@lit)',array('@lit'=>$o['object']['literal'])): " ";
-			
+			$row['object']['#markup'] = $target_object_link_lit;//@todo manage literals
+			$row['delete']['#markup'] = "";
 		}
-		if (!empty($target_object_link))
-			{
-			$row['object']['#markup'] = $target_object_link;
-			$row['delete']['#markup'] = l(t('Delete'), islandora_ontologies_get_delete_path($islandora_object_pid, urlencode($o['predicate']['namespace']), $o['predicate']['value'], $o['object']['value']));
-			}
-		elseif (!empty($target_object_link_lit))
-			{
-				$row['object']['#markup'] = $target_object_link_lit;//@todo manage literals
-				$row['delete']['#markup'] = "";
-				
-			}
-		else//We don´t know what to do with this relation, maybe it´s a flag only!
-			{
-				$row['object']['#markup']="";
-				$row['delete']['#markup'] ="";
-			}	
+		
+		
+		
 		if ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/model#') {
 			$row['delete']['#markup'] = t('Can\'t delete fedora model.');
 		}
