@@ -86,20 +86,21 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	/**
 	* @see forked from islandora_relationship_editor 
 	*/
-function islandora_ontologies_delete_relationships(array $form, array &$form_state, $objectPid, $namespace, $relationship, $targetPid) {
-	  $subject = islandora_object_load($objectPid);
-	  if (!$subject) {
-	    drupal_set_message("Fedora object " . $objectPid . " not found.");
+function islandora_ontologies_delete_relationships(array $form, array &$form_state,AbstractObject $islandoraobject, $namespace, $relationship, $targetPid=NULL) {
+	
+	  
+	  if (!$islandoraobject) {
+	    drupal_set_message("Fedora object not found.");
 	    drupal_not_found();
 	    exit;
 	  }
-
-	  if ($subject->relationships->remove(urldecode($namespace), $relationship, $targetPid)) {
+	  
+	  if ($islandoraobject->relationships->remove(urldecode($namespace), $relationship, $targetPid)) {
 
 	  return array(
 	    'object_pid' => array(
 	      '#type' => 'hidden',
-	      '#value' => $objectPid,
+	      '#value' => $islandoraobject->id,
 	    ),
 	    'description' => array(
 	      '#type' => 'markup',
@@ -118,7 +119,7 @@ function islandora_ontologies_delete_relationships(array $form, array &$form_sta
 	  return array(
 	    'object_pid' => array(
 	      '#type' => 'hidden',
-	      '#value' => $objectPid,
+	      '#value' => $islandoraobject->id,
 	    ),
 	    'description' => array(
 	      '#type' => 'markup',
