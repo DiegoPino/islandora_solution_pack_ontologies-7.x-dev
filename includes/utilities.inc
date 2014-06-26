@@ -220,8 +220,10 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 		$graph->load($xmlfilelink);
 		foreach($graph->allOfType('owl:ObjectProperty')->sort("rdfs:label") as $property)
 		{
-			
-				
+			$inverse="";
+			$inverseof="";	
+			$inverse_array=array();
+			$inverseof_array=array();
 			if (!$property->get("-owl:onProperty")->get("-rdfs:subClassOf")->isNull())
 			{
 			if ($property->get("-owl:onProperty")->get("-rdfs:subClassOf")->uri == "info:fedora/".$subject)   //If this URI equals the subject we found an restricted $property for this class. If its a null node or inexistant it will give and GraphiteNull Object, no need to check for it.
@@ -237,7 +239,7 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 					$uri_parts_inverse=ARC2::splitURI($inverse);
 					$inverse_array=array('ns'=>$uri_parts_inverse[0],'proplocal'=>$uri_parts_inverse[1]);	
 					}
-					if (!empty($inverseof))
+				if (!empty($inverseof))
 						{
 						$uri_parts_inverse=ARC2::splitURI($inverseof);
 						$inverseof_array=array('ns'=>$uri_parts_inverse[0],'proplocal'=>$uri_parts_inverse[1]);	

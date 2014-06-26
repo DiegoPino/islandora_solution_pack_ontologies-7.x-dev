@@ -51,31 +51,30 @@ function islandora_ontologies_menu() {
 	   'weight' => -5,
     );
   
-  $items['islandora/object/%islandora_object/manage/object/relationships/add'] = array(
+  $items['islandora/object/%/manage/object/relationships/add'] = array(
     'title' => t('Add relationships'),
     'description' => t('Add a new related object'),
     'file' => 'includes/add_relation.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_ontologies_add_relationships_form', 2),
-    'access callback' => 'islandora_ontologies_relate_access',
+    'access callback' => 'islandora_ontologies_relate_access_mod',
     'access arguments' => array(2),
     'type' => MENU_LOCAL_ACTION,
   );
-  $items['islandora/object/%islandora_object/manage/relationships/delete/%/%/%'] = array(
+  $items['islandora/object/%/manage/relationships/delete/%/%/%'] = array(
     'title' => t('Delete relationship'),
     'description' => t('Delete a relationship'),
     'file' => 'includes/del_relation.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_ontologies_delete_relationships', 2, 6, 7, 8),
-    'access callback' => 'islandora_ontologies_relate_access',
+    'access callback' => 'islandora_ontologies_relate_access_mod',
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
   $items['islandora/relationships/autocomplete/target/%/%'] = array(
     'page callback' => 'islandora_ontologies_object_autocomplete',
     'page arguments' => array(4,5),
-    'access callback' => 'islandora_ontologies_relate_access',
-    'access arguments' => array(2),
+    'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
     'type' => MENU_CALLBACK,
   );
   $items['islandora/relationships/autocomplete/cmodel/'] = array(
@@ -107,6 +106,27 @@ function islandora_ontologies_relate_access($islandora_object) {
   if (!array_intersect(array('islandora:collectionCModel'), $models)) {
     return islandora_object_access(ISLANDORA_MANAGE_PROPERTIES, $islandora_object);
   }
+  return FALSE;
+}
+
+function islandora_ontologies_relate_access_mod($islandora_object_pid) {
+  if (!isset($islandora_object_pid)) {
+    return FALSE;
+  }
+try {
+	$islandora_object=islandora_object_load($islandora_object_pid);
+}
+catch (Exception $e) 
+{
+	return FALSE;
+}
+if ($islandora_object)
+	{
+  $models = $islandora_object->models;
+  if (!array_intersect(array('islandora:collectionCModel'), $models)) {
+    return islandora_object_access(ISLANDORA_MANAGE_PROPERTIES, $islandora_object);
+  }
+}
   return FALSE;
 }
 

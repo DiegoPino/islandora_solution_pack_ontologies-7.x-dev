@@ -11,9 +11,23 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 		exit;	
 	}	  
 	$currentrelations=islandora_ontologies_get_current_localrelations($islandora_object_pid);
+	$currentontologies= islandora_ontologies_get_associated_ontologies($islandora_object);//@see utilities.inc
+	foreach($currentontologies as $subject=>$ontologies)
+	{
+
+		$posible_relastionships[$subject]=islandora_ontologies_get_possible_localrelations($subject,$ontologies);//We are going to use this to also delete the inverse one if they exist, so we don't get orphan relations and a mess.
+				
+	}
+	
+	
+	
+	
+	
+	
 	$rows=array();
 	//dpm($currentrelations);
 	foreach ($currentrelations as $o){
+			
 		$target_object_link="";
 		$row=array();
 		$row['namespace']['#markup'] = $o['predicate']['namespace']. " (xmlns:".$o['predicate']['alias'].")";
@@ -25,7 +39,31 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 				$target_object_pid=$o['object']['value'];
 				if ($target_object)
 					{
-						
+					//Target exists, so lets look for an inverse or inverseof in the possible array
+					//look for an inverseof or inverse first. This object can have relations outside our current ontologies, so we must check...it´s far from optimal, too much loops.
+					foreach ($posible_relastionships as $cmodel => $localrels)
+						{
+							foreach ($localrels['posiblerels_complete'] as $ontologies=>$rels)
+								{
+									if (array_key_exists($o['predicate']['namespace'].$o['predicate']['value'],$rels))
+										{
+										
+											
+										if (count((array)$rels[$o['predicate']['namespace'].$o['predicate']['value']]['inverse'])==2)
+											{
+												
+												
+											}
+										elseif (count((array)$rels[$o['predicate']['namespace'].$o['predicate']['value']]['inverseof'])==2)
+											{
+												
+												
+											}
+											break;
+										}	
+								}
+				
+						}	
 						
 				$target_object_link=l(t('@label (@pid)', array('@label' =>$target_object->label, '@pid' =>$target_object_pid)), "islandora/object/{$target_object_pid}/manage/relationships");
 				$row['object']['#markup'] = $target_object_link;
@@ -86,21 +124,28 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	/**
 	* @see forked from islandora_relationship_editor 
 	*/
-function islandora_ontologies_delete_relationships(array $form, array &$form_state,AbstractObject $islandoraobject, $namespace, $relationship, $targetPid=NULL) {
+function islandora_ontologies_delete_relationships(array $form, array &$form_state, $islandora_object_pid, $namespace, $relationship, $targetPid=NULL) {
+	
+	try {
+		$islandora_object=islandora_object_load($islandora_object_pid);
+	}
+	catch (Exception $e) 
+	{
+		return FALSE;
+	}
 	
 	  
-	  if (!$islandoraobject) {
+	  if (!$islandora_object) {
 	    drupal_set_message("Fedora object not found.");
 	    drupal_not_found();
-	    exit;
+	    return;
 	  }
 	  
-	  if ($islandoraobject->relationships->remove(urldecode($namespace), $relationship, $targetPid)) {
-
+	  if ($islandora_object->relationships->remove(urldecode($namespace), $relationship, $targetPid)) {
 	  return array(
 	    'object_pid' => array(
 	      '#type' => 'hidden',
-	      '#value' => $islandoraobject->id,
+	      '#value' => $islandora_object->id,
 	    ),
 	    'description' => array(
 	      '#type' => 'markup',
@@ -119,7 +164,7 @@ function islandora_ontologies_delete_relationships(array $form, array &$form_sta
 	  return array(
 	    'object_pid' => array(
 	      '#type' => 'hidden',
-	      '#value' => $islandoraobject->id,
+	      '#value' => $islandora_object->id,
 	    ),
 	    'description' => array(
 	      '#type' => 'markup',

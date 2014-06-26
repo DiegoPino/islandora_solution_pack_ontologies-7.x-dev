@@ -178,26 +178,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 	  
 				);
 
-				$form['symmetric'] = array(
-					'#type' => 'fieldset',
-					'#title' => 'Symmetry',
-					'#prefix' => '<div id="fieldset_symm_replace">',
-					'#suffix' => '</div>',
-				);
-
-				$form['symmetric']['inv-relationship'] = array(
-					'#type' => 'textfield',
-					'#title' => t('Symmetric relationship'),
-					'#disabled' => TRUE,
-					'#value' => textfield_inverseof_value($value_relationship),
-				);
-
-				$form['symmetric']['inv-relationship_ns'] = array(
-					'#type' => 'textfield',
-					'#title' => t('Symmetric namespace'),
-					'#disabled' => TRUE,
-					'#value' => textfield_inverseof_ns($value_relationship),
-				);
+				
 				
 				
 
@@ -318,7 +299,8 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 					
 					if ($restrictionson_properties[$subject][$ontology][$property]['inverse'])
 						{
-						$value_restrictions[]=t('<b>This relation implements an inverse one: </b>').$restrictionson_properties[$subject][$ontology][$property]['inverse'];	
+							
+						$value_restrictions[]=t('<b>This relation implements an inverse one: </b>').$restrictionson_properties[$subject][$ontology][$property]['inverse']['localname'];	
 						}
 					if ($restrictionson_properties[$subject][$ontology][$property]['inversof'])
 						{
@@ -329,59 +311,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 				return $value_restrictions;
 			}
 
-			function textfield_inverseof_value($value_relationship) {
-				if (!empty($value_relationship)) {
-					//$vocabulary = get_current_vocabulary();
-					$term = $vocabulary['terms'][$value_relationship];
-					if (isset($term['inverse'][0])) {
-						//list($value_ns, $value_inverse) = rdfx_split_uri($term['inverse'][0]);
-					}
-				}
-				return empty($value_inverse) ? "No inverse" : $value_inverse;
-			}
-
-			function textfield_inverseof_ns($value_relationship) {
-				if (!empty($value_relationship)) {
-					//$vocabulary = get_current_vocabulary();
-					$term = $vocabulary['terms'][$value_relationship];
-					if (isset($term['inverse'][0])) {
-						//list($value_ns, $value_inverse) = rdfx_split_uri($term['inverse'][0]);
-					}
-				}
-				return empty($value_ns) ? "No inverse ns" : $value_ns;
-			}
-
-			function description_inverseof_value($value_relationship) {
-				if (!empty($value_relationship)) {
-					//$vocabulary = get_current_vocabulary();
-					$term = $vocabulary['terms'][$value_relationship];
-					if (isset($term['inverse'][0])) {
-						$term1 = $vocabulary['terms'][$term['inverse'][0]];
-						if (isset($term1['label'])) {
-							if (isset($term1['label']['en'])) {
-								$servoc = $term1['label']['en'];
-							} else {
-								$servoc = reset($term1['label']);
-							}
-						}
-						$value_inverse = "<B>".$servoc."</B>";
-					}
-				}
-
-				return empty($value_inverse) ? "No inverse<HR>" : $value_inverse."<HR>";
-			}
-
-			function has_inverseof_value($value_relationship) {
-				if (!empty($value_relationship)) {
-					//$vocabulary = get_current_vocabulary();
-					$term = $vocabulary['terms'][$value_relationship];
-					if (isset($term['inverse'][0])) {
-						return TRUE;
-					}
-				}
-
-				return FALSE;
-			}
+			
 
 			function islandora_ontologies_add_relationships_form_submit($form, &$form_state) {
 	
