@@ -42,16 +42,16 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 			continue;	
 			}
 		$existing_classes[$parts[1]]=$resource_list->uri;
-		//@TODO check if ontology is correct before adding associate option
-		//get_restrictions_onClasses($classes);
+		//@TODO check if ontology is correct before adding associate option? This would be almost a reasoner. Not sure if neccesary.
+		
 	}
 	$rows = array();
-	//print_r($existing_classes);
+	
 	$matchedcontenmodels=array();
 	$matchedcontenmodels=array_intersect_key($existing_content_models,$existing_classes);//Here we get those owl classes that are present as content models in our repository
 	foreach ($matchedcontenmodels as $contentmodelpid => $content_model) {
 		try {
-			$contentmodel_object =islandora_object_load($contentmodelpid);
+			$contentmodel_object=islandora_object_load($contentmodelpid);
 		}
 		catch (Exception $e) {
 			continue;
@@ -254,7 +254,7 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	    '#group' => 'manage_relations',
 	    '#access' => $access['del_relationships'],
 	    '#type' => 'fieldset',
-	    '#title' => t('Delete existing relationships'),
+	    '#title' => t('Manage existing relationships'),
 	    'form' => $forms['del_relationships'],
 	  );
 	  return $form_state;
