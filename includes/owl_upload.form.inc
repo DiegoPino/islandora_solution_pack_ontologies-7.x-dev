@@ -51,7 +51,7 @@ function islandora_ontologies_owl_upload_form(array $form, array &$form_state) {
 function islandora_ontologies_owl_upload_form_submit(array $form, array &$form_state) {
 
  
-  $object= isset($form_state['object_id']) ? islandora_object_load($form_state['object_id']): $form_state['islandora']['objects'][0];//true means we are updating, this varibale is set on the wrapper function islandora_ontologies_update_ontology, no 
+  $object= isset($form_state['object_id']) ? islandora_object_load($form_state['object_id']): $form_state['islandora']['objects'][0];//true means we are updating, this variable is set on the wrapper function islandora_ontologies_update_ontology, no 
   $dsid = 'ONTOLOGY';
   // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
   // The easiest way to do this, as opposed to a string of cases or if/then/elses, is the ternary operator, e.g.
