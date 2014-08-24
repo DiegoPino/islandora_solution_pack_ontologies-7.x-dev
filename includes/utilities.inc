@@ -58,7 +58,7 @@ function islandora_ontologies_get_delete_path($objectPid, $namespace, $relations
   return 'islandora/object/' . $objectPid . '/manage/relationships/delete/' . $namespace . '/' . $relationship . '/' . $targetPid;
 }
 /**
-* This function will reads the content models of an Objects and searches if this contentmodels are associated to an Ontology Object
+* This function will read the content models of an Objects and searches if this contentmodels are associated to an Ontology Object
 *
 * If there are ontologie objects associated it returns the ontologie objects
 *
@@ -920,6 +920,8 @@ $graph = array(
 					//1.-One with classes as values and keys 
 					//2. and one with properties as keys and values.
 					//3.- some mixup from 1. and 2.
+					dpm($adjacency[$ontology]);
+					
 					$adjacencyparsed=array();
 					foreach ($adjacency[$ontology] as $class=>$props)
 						{

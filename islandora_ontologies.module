@@ -365,4 +365,86 @@ function islandora_ontologies_ontologies_ontologyCmodel_islandora_ingest_steps(a
 }
 
 
+function  islandora_ontologies_library() {
+		  $path=drupal_get_path('module', 'islandora_ontologies');
+		  
+		  $libraries['islandora_ontologies_graphkit'] = array(
+		    'title' => 'islandora ontologies graphkit',
+		    'version' => 1.0,
+		    'js' => array(
+		      array(
+		        'type' => 'file',
+		         'data' => "$path/js/raphael-min.js",
+		         'group' => JS_LIBRARY,
+		         'preprocess' => FALSE,
+		         'weight' => 2,
+		      ),
+		     /* array(
+		        'type' => 'file',
+		        'data' => "$path/js/graphkit.js",
+		        'group' => JS_LIBRARY,
+		        'preprocess' => FALSE,
+		        'weight' => 3,
+		      ),*/
+		      array(
+		        'type' => 'file',
+		        'data' => "$path/js/vlot.js",
+		        'group' => JS_LIBRARY,
+		        'preprocess' => FALSE,
+		        'weight' => 4,
+		      ),
+		    ), 
+		  );
+	  return $libraries;
+		}
 
+	
+
+/**
+ * Attach 'islandora_ontologies_graphkit client files and return the SVG.
+ *
+ * @param array $graph
+ *   $graph definition as returned by islandora_ontologies_vlot_get_info();
+ * @param array $nodes
+ *   Associative array of nodes and relations
+ * @param string $height
+ *   The height of the graph .
+ *
+ * @return array
+ *   A renderable SVG.
+ */
+function islandora_ontologies_build_vlot($graph=array(), $nodes = array(), $height = '400px') {
+  $graph_id = drupal_html_id('graph-id1');
+  $build = array(
+    '#theme' => 'html_tag',
+    '#tag' => 'div',
+    '#value' => '',
+    '#attributes' => array(
+      'id' =>  $graph_id,
+      'style' => 'height: ' . $height,
+    ),
+  );
+
+ 
+ 
+  $settings = array(
+    'graphId' => $graph_id,
+    'graph' => $graph,
+    'nodes' => $nodes,
+  );
+  
+  $build['#attached']['js'][] = array(
+    'data' => array('vlot' => array($settings)),
+    'type' => 'setting',
+  );
+
+  // Load the library
+  drupal_add_library('islandora_ontologies', 'islandora_ontologies_graphkit');
+  //$options = array('type' => 'file', 'weight' => 2);
+  //drupal_add_js(drupal_get_path('module', 'islandora_red_biodiversidad') . '/js/leaflet.markercluster.layercontrol.js', $options);
+  
+
+  return $build;
+}
+
+				
