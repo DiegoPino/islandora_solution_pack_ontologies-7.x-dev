@@ -920,7 +920,7 @@ $graph = array(
 					//1.-One with classes as values and keys 
 					//2. and one with properties as keys and values.
 					//3.- some mixup from 1. and 2.
-					dpm($adjacency[$ontology]);
+					//dpm($adjacency[$ontology]);
 					
 					$adjacencyparsed=array();
 					foreach ($adjacency[$ontology] as $class=>$props)
@@ -1341,7 +1341,7 @@ class islandora_ontologies_adjacency_graph
 	    $path[$origin]->push($origin);
          
 	    $found = false;
-		dpm($this->visited);
+		//dpm($this->visited);
 		//dpm($path);
 	    // while queue is not empty and destination not found
 	   while (!$q->isEmpty() && $q->bottom() != $destination) {
