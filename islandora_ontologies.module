@@ -364,11 +364,14 @@ function islandora_ontologies_ontologies_ontologyCmodel_islandora_ingest_steps(a
   );
 }
 
-
+ /**
+ * Implements VLOT javascript libraries
+ * This Libraries allow a visual representation of relateed objects using arbor.js and our own implementation
+ */
 function  islandora_ontologies_library() {
 		  $path=drupal_get_path('module', 'islandora_ontologies');
 		  
-		  $libraries['islandora_ontologies_graphkit'] = array(
+		  /*$libraries['islandora_ontologies_graphkit'] = array(
 		    'title' => 'islandora ontologies graphkit',
 		    'version' => 1.0,
 		    'js' => array(
@@ -379,13 +382,6 @@ function  islandora_ontologies_library() {
 		         'preprocess' => FALSE,
 		         'weight' => 2,
 		      ),
-		     /* array(
-		        'type' => 'file',
-		        'data' => "$path/js/graphkit.js",
-		        'group' => JS_LIBRARY,
-		        'preprocess' => FALSE,
-		        'weight' => 3,
-		      ),*/
 		      array(
 		        'type' => 'file',
 		        'data' => "$path/js/vlot.js",
@@ -394,16 +390,111 @@ function  islandora_ontologies_library() {
 		        'weight' => 4,
 		      ),
 		    ), 
-		  );
+		  );*/
+			
+			  $libraries['islandora_ontologies_vlot'] = array(
+			  		    'title' => 'islandora ontologies vlot',
+			  		    'version' => 1.0,
+					    'css' => array(
+					      "$path/css/islandora_ontologies_vlot.css" => array(
+					        'type' => 'file',
+					        'media' => 'screen',
+					      ),
+					  ),
+			  		    'js' => array(
+			  		      array(
+			  		        'type' => 'file',
+			  		         'data' => "$path/js/arbor.js",
+			  		         'group' => JS_LIBRARY,
+			  		         'preprocess' => FALSE,
+			  		         'weight' => 2,
+			  		      ),
+			  		      array(
+			  		        'type' => 'file',
+			  		         'data' => "$path/js/arbor-tween.js",
+			  		         'group' => JS_LIBRARY,
+			  		         'preprocess' => FALSE,
+			  		         'weight' => 3,
+			  		      ),
+			  		      array(
+			  		        'type' => 'file',
+			  		         'data' => "$path/js/graphics.js",
+			  		         'group' => JS_LIBRARY,
+			  		         'preprocess' => FALSE,
+			  		         'weight' => 4,
+			  		      ),
+			  		     
+			  		      array(
+			  		        'type' => 'file',
+			  		        'data' => "$path/js/vlot.js",
+			  		        'group' => JS_LIBRARY,
+			  		        'preprocess' => FALSE,
+			  		        'weight' => 5,
+			  		      ),
+			  		    ), 
+			  		  ); 
+			  
+			  
+			  
 	  return $libraries;
 		}
+/* Implements hook_islandora_ontologies_vlot_info
+ * @return array
+ *   Associative array containing a set of Colors,CMODEL to human mapping and other attributes for the canvas renderer of vlot
+ */
 
-	
+function islandora_ontologies_islandora_ontologies_vlot_info() {
+		  return array('basestyle'=>array(
+		        'default' => array(
+		         'cmodel_label' => 'object',
+		         'color' => 'blue',//or #454545 or rgb(10,10,10)
+		     	),
+			)
+		  );
+		}
+
 
 /**
- * Attach 'islandora_ontologies_graphkit client files and return the SVG.
+ * Get all available Vlot style definitions.
  *
- * @param array $graph
+ * @string ($graphstyle
+ *   The name of the graphstyle defined in hook_islandora_ontologies_vlot_info().
+ */
+
+function islandora_ontologies_vlot_get_info($graphstyle= NULL) {
+	  static $drupal_static_fast;
+	  if (!isset($drupal_static_fast)) {
+	    $drupal_static_fast['islandora_ontologies_vlot_info'] = &drupal_static(__FUNCTION__);
+	  }
+	  $graph_info = &$drupal_static_fast['islandora_ontologies_vlot_info'];
+
+	  if (empty($graph_info)) {
+	    if ($cache = cache_get("islandora_ontologies_vlot_info")) {
+	      $graph_info = $cache->data;
+	    }
+	    else {
+	      $graph_info = module_invoke_all('islandora_ontologies_vlot_info');
+
+	      // Let other modules alter the map info.
+	      drupal_alter('islandora_ontologies_vlot_info',  $graph_info);
+
+	      cache_set("islandora_ontologies_vlot_info",  $graph_info);
+	    }
+	  }
+
+	  if (empty($graphstyle)) {
+	    return $graph_info;
+	  }
+	  elseif (isset($graph_info[$graphstyle])) {
+	    return $graph_info[$graphstyle];
+	  }
+	}
+
+
+/**
+ * Attach 'islandora_ontologies_vlot javascript libraries.
+ *
+ * @param array $graphstyle
  *   $graph definition as returned by islandora_ontologies_vlot_get_info();
  * @param array $nodes
  *   Associative array of nodes and relations
@@ -413,23 +504,40 @@ function  islandora_ontologies_library() {
  * @return array
  *   A renderable SVG.
  */
-function islandora_ontologies_build_vlot($graph=array(), $nodes = array(), $height = '400px') {
+function islandora_ontologies_build_vlot($graphstyle=array(), $nodes = array(), $width='400', $height = '400') {
   $graph_id = drupal_html_id('graph-id1');
+  $checked_id = drupal_html_id('selected-node-id1');
+  $vlot_info_id = drupal_html_id('vlot_info_id');
   $build = array(
+  'vlotinfo'=>array(
+  '#theme' => 'html_tag',
+  '#tag' => 'div',
+  '#value' => t('Click over an Object to select'),
+   '#default_value' => t('Click over an Object to select'),
+  '#attributes' => array(
+    'id' =>  $vlot_info_id,
+   'class' => 'islandora-ontologies-vlot-info',
+  ),
+),	
+  
+      
+	  'canvas'=>array(
     '#theme' => 'html_tag',
-    '#tag' => 'div',
+    '#tag' => 'canvas',
     '#value' => '',
     '#attributes' => array(
       'id' =>  $graph_id,
-      'style' => 'height: ' . $height,
+	  'width' => $width,
+	  'height' => $height,
+      'style' => 'height:' .$height.'px;width:'.$width.'px',
     ),
-  );
+  ));
 
  
  
   $settings = array(
     'graphId' => $graph_id,
-    'graph' => $graph,
+    'graphStyle' => $graphstyle,
     'nodes' => $nodes,
   );
   
@@ -439,11 +547,7 @@ function islandora_ontologies_build_vlot($graph=array(), $nodes = array(), $heig
   );
 
   // Load the library
-  drupal_add_library('islandora_ontologies', 'islandora_ontologies_graphkit');
-  //$options = array('type' => 'file', 'weight' => 2);
-  //drupal_add_js(drupal_get_path('module', 'islandora_red_biodiversidad') . '/js/leaflet.markercluster.layercontrol.js', $options);
-  
-
+  drupal_add_library('islandora_ontologies', 'islandora_ontologies_vlot');
   return $build;
 }
 
