@@ -50,8 +50,23 @@ function islandora_ontologies_owl_upload_form(array $form, array &$form_state) {
  */
 function islandora_ontologies_owl_upload_form_submit(array $form, array &$form_state) {
 
+    $object= isset($form_state['object_id']) ? islandora_object_load($form_state['object_id']): $form_state['islandora']['objects'][0];
+    
+    if (empty($object['ONTOLOGY'])) {
+      $ds = $object->constructDatastream('ONTOLOGY', 'M');
+      $object->ingestDatastream($ds);
+    }
+    else {
+      $ds = $object['ONTOLOGY'];
+    }
+    $file = file_load($form_state['values']['file']);
+    $path = drupal_realpath($file->uri);
+    $ds->setContentFromFile($path, FALSE);
+    $ds->label = $file->filename;
+    $ds->mimetype = $file->filemime;
  
-  $object= isset($form_state['object_id']) ? islandora_object_load($form_state['object_id']): $form_state['islandora']['objects'][0];//true means we are updating, this variable is set on the wrapper function islandora_ontologies_update_ontology, no 
+ 
+  /*$object= isset($form_state['object_id']) ? islandora_object_load($form_state['object_id']): $form_state['islandora']['objects'][0];//true means we are updating, this variable is set on the wrapper function islandora_ontologies_update_ontology, no 
   $dsid = 'ONTOLOGY';
   // Before we do anything, check if the datastream exists. If it does, load it; otherwise construct it.
   // The easiest way to do this, as opposed to a string of cases or if/then/elses, is the ternary operator, e.g.
@@ -62,14 +77,15 @@ function islandora_ontologies_owl_upload_form_submit(array $form, array &$form_s
   $datastream = isset($object[$dsid]) ? $object[$dsid] : $object->constructDatastream($dsid,'M');
   $datastream->label = $file->filename;
   $datastream->mimeType = $file->filemime;
-  $datastream->setContentFromFile($path, FALSE);
+  
   /*Only ingest if dsid doesn´t exist */
   //$object->ingestDatastream($datastream);
-  if (!isset($object[$dsid]))
+  /*if (!isset($object[$dsid]))
   {
 	 
   	$object->ingestDatastream($datastream);
   }
+  $datastream->setContentFromFile($path, FALSE);
    file_delete($file);
  }
  catch (exception $e) {
@@ -77,7 +93,7 @@ function islandora_ontologies_owl_upload_form_submit(array $form, array &$form_s
    // Make sure to delete anyways.
    file_delete($file);
    return;
- }
+ }*/
  drupal_set_message(t("Successfully Uploaded Ontology Datastream!"));
 }
 /**
@@ -97,8 +113,9 @@ function islandora_ontologies_update_ontology(array $form, array &$form_state, A
  
 
   $form_state['object_id'] = $object->id;
- drupal_set_message($form_state['object_id']);
- 
+  drupal_set_message($form_state['object_id']);
+  dpm($object);
+  
   $form = islandora_ontologies_owl_upload_form($form,$form_state);
   $form['submit'] = array(
     '#type' => 'submit',

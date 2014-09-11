@@ -9,7 +9,10 @@
       <form FORMAT_URI="info:fedora/fedora-system:FedoraRELSInt-1.0" MIME="application/rdf+xml"></form>
   </dsTypeModel>
   <dsTypeModel ID="ONTOLOGY">
-    <form FORMAT_URI="http://www.w3.org/2002/07/owl"  MIME="application/rdf+xml"></form>
+    <form FORMAT_URI="http://www.w3.org/2002/07/owl"  MIME="application/rdf+xml">
+	<form MIME="text/xml"/>
+	<form MIME="application/octet-stream"/>	
+    </form>
   </dsTypeModel>
   <dsTypeModel ID="MODS" optional="true">
     <form FORMAT_URI="http://www.loc.gov/mods/v3" MIME="text/xml"></form>
