@@ -51,7 +51,7 @@ function islandora_ontologies_menu() {
 	   'weight' => -5,
     );
   
-  $items['islandora/object/%/manage/object/relationships/add'] = array(
+  $items['islandora/object/%islandora_object/manage/object/relationships/add'] = array(
     'title' => t('Add relationships'),
     'description' => t('Add a new related object'),
     'file' => 'includes/add_relation.inc',
@@ -61,7 +61,7 @@ function islandora_ontologies_menu() {
     'access arguments' => array(2),
     'type' => MENU_LOCAL_ACTION,
   );
-  $items['islandora/object/%/manage/relationships/delete/%/%/%'] = array(
+  $items['islandora/object/%islandora_object/manage/relationships/delete/%/%/%'] = array(
     'title' => t('Delete relationship'),
     'description' => t('Delete a relationship'),
     'file' => 'includes/del_relation.inc',

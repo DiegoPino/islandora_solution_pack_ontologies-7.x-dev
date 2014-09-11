@@ -383,7 +383,7 @@ Drupal.behaviors.vlot = {
             sys.parameters({gravity:true}) // use center-gravity to make the graph settle nicely (ymmv)
 		     
 			
-			 if (maxnodesbeforescaling<Object.keys(this.nodes).length){nodeLabelscaling=true;maxMass=5}
+			 if (maxnodesbeforescaling<Object.keys(this.nodes).length){nodeLabelscaling=true;maxMass=3}
 			 
 			 
 			 
