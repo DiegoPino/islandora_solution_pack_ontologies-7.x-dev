@@ -24,6 +24,7 @@ Drupal.behaviors.vlot = {
 
 	          // draw the nodes & save their bounds for edge drawing
 	          var nodeBoxes = {}
+			  console.log(particleSystem.energy());
 	          particleSystem.eachNode(function(node, pt){
 	            // node: {mass:#, p:{x,y}, name:"", data:{}}
 	            // pt:   {x:#, y:#}  node position in screen coords

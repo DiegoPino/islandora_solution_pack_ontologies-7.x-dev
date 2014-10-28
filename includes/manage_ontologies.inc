@@ -73,7 +73,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 					'#markup' => l(t('@label (@pid)', array('@label' => $label, '@pid' => $contentmodelpid)), "islandora/object/{$contentmodelpid}"),
 				),
 				'allowed_relations' => array(
-				        '#markup' => t('hola'),
+				        '#markup' => t(''),
 					),	
 			);
 		}
