@@ -220,13 +220,19 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 		$graph->load($xmlfilelink);
 		foreach($graph->allOfType('owl:ObjectProperty')->sort("rdfs:label") as $property)
 		{
+			
+			
 			$inverse="";
 			$inverseof="";	
 			$inverse_array=array();
 			$inverseof_array=array();
 			if (!$property->get("-owl:onProperty")->get("-rdfs:subClassOf")->isNull())
 			{
-			if ($property->get("-owl:onProperty")->get("-rdfs:subClassOf")->uri == "info:fedora/".$subject)   //If this URI equals the subject we found an restricted $property for this class. If its a null node or inexistant it will give and GraphiteNull Object, no need to check for it.
+			foreach($property->all("-owl:onProperty") as $prop)//Could be multiple, i the same property is used across mult. class restrictions. Fixes previous flase asumption!
+				{
+				
+				
+			if ($prop->get("-rdfs:subClassOf")->uri == "info:fedora/".$subject)   //If this URI equals the subject we found an restricted $property for this class. If its a null node or inexistant it will give and GraphiteNull Object, no need to check for it.
 			{
 				//We won´t deal with the nature of the restriction here. We just wan´t a list of possible/defined/restricted properties for this particular class
 				$inverse=$property->get('-owl:inverseOf')->isNull() ? '' : $property->get('-owl:inverseOf')->uri;
@@ -256,6 +262,9 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 				$posiblerels_asformoptions[$ontology_label][$PID." ".$property->uri]=$posiblerels_complete[$PID][$property->uri]['label'];//To avoid other loops elsewhere we process the needed form options here. 
 				//Note: our option value is composed of the PID of the ontology object and the property URL. this way we can later discriminated from which ontology object we are going to evaluate our restrictions		
 			}
+			
+		    }
+			
 		}
 		}
 			

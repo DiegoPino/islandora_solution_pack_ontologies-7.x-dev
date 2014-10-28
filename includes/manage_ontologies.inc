@@ -34,6 +34,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 	$graph = new Graphite();
 	$graph->load($xmlfilelink);
 	$existing_classes=array();
+	
 	foreach($graph->allOfType('owl:Class') as $resource_list)
 	{
 		$parts = ARC2::splitURI($resource_list->uri);//We need don´t need in our keys the info:fedora part, but we must check if it´s there

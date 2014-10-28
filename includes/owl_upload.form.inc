@@ -114,7 +114,7 @@ function islandora_ontologies_update_ontology(array $form, array &$form_state, A
 
   $form_state['object_id'] = $object->id;
   drupal_set_message($form_state['object_id']);
-  dpm($object);
+  
   
   $form = islandora_ontologies_owl_upload_form($form,$form_state);
   $form['submit'] = array(
