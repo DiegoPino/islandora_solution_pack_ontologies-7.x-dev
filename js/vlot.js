@@ -20,18 +20,20 @@ Drupal.behaviors.vlot = {
 
 	        redraw:function(){
 	          if (!particleSystem) return
+			  if (particleSystem.energy().mean<=0.04) return
 			  gfx.clear() // convenience ƒ: clears the whole canvas rect
 
 	          // draw the nodes & save their bounds for edge drawing
 	          var nodeBoxes = {}
-			  console.log(particleSystem.energy());
+			 
 	          particleSystem.eachNode(function(node, pt){
 	            // node: {mass:#, p:{x,y}, name:"", data:{}}
 	            // pt:   {x:#, y:#}  node position in screen coords
-
+                
+				
 	            // determine the box size and round off the coords if we'll be 
 	            // drawing a text label (awful alignment jitter otherwise...)
-	            var label = node.data.label||""
+	            var label = node.data.label||"Object"
 				ctx.font = "12px Helvetica"
 	            var w = ctx.measureText(""+label).width + 15
 				
@@ -166,7 +168,7 @@ Drupal.behaviors.vlot = {
 			 var htmlNodeLink = function(link,label)
 				{
 				
-				$("#vlot-info-id").html("<span>Explore:</span><ul><li><a href=\""+link+"\">"+label+"'s info</a></li><li>"+"<a href=\""+link+"/dwc_related\">"+label+"'s related objects</a></li>");	
+				$("#vlot-info-id").html("<span>Explore:</span><ul class=\"nav nav-pills nav-stacked\"><li><a href=\""+link+"\"><i class=\"fa fa-eye\"></i> "+label+"'s info</a></li><li>"+"<a href=\""+link+"/dwc_related\"><i class=\"fa fa-sitemap\"></i> "+label+"'s related objects</a></li>");	
 				return false
 				};
 			  
@@ -210,7 +212,7 @@ Drupal.behaviors.vlot = {
 				     }
 				  
 				  hovered = nearest = prenear;
-                  if ((!nearest)|| (hovered==hovered_old)) return;
+                  if ((!nearest)|| (hovered==hovered_old) || nearest>10) return;
 	              if (!hovered_old)
 				  		{
 						
@@ -376,12 +378,29 @@ Drupal.behaviors.vlot = {
 			
 			
 			var maxnodesbeforescaling=this.graphNodeCountLimit || 30;
-			var maxMass=2;
+			
 			var nodeLabelscaling=false;
 		    var currentNodeLabel="Object";
-			var sys = arbor.ParticleSystem({friction:.3, stiffness:256, repulsion:3000}) // create the system with sensible repulsion/stiffness/friction
+			
+			if (Object.keys(this.nodes).length>10)
+				{
+				var sys = arbor.ParticleSystem({friction:0.5, stiffness:150, repulsion:1000,fps:30,precision:0.2})
+				var maxMass=2; // create the system with sensible repulsion/stiffness/friction
+				var mass=1;
+				var edgelength=1;
+				}
+			else
+				{
+			     var sys = arbor.ParticleSystem({friction:5, stiffness:256, repulsion:300})
+				 var maxMass=2;// create the system with sensible repulsion/stiffness/friction
+				 var mass=0.5;
+				 var edgelength=0.5;
+				}
+			 sys.parameters({gravity:true})
+			
+			 // create the system with sensible repulsion/stiffness/friction
 			sys.renderer = Renderer('#'+this.graphId) // our newly created renderer will have its .init() method called shortly by sys...
-            sys.parameters({gravity:true}) // use center-gravity to make the graph settle nicely (ymmv)
+            // use center-gravity to make the graph settle nicely (ymmv)
 		     
 			
 			 if (maxnodesbeforescaling<Object.keys(this.nodes).length){nodeLabelscaling=true;maxMass=3}
@@ -401,11 +420,12 @@ Drupal.behaviors.vlot = {
 							{
 							currentNodeLabel=this.graphStyle[this.nodes[key]["node_cmodel"]].cmodel_label;	
 							}
-					    sys.addNode(key.replace( /(:|\.|\[|\])/g, "\\$1") ,{'color':this.graphStyle[this.nodes[key]["node_cmodel"]].color,'color_original':this.graphStyle[this.nodes[key]["node_cmodel"]].color,'shape':'rect','label':currentNodeLabel,'label_full':this.nodes[key]["label"],'label_short':currentNodeLabel,'mass':1,'link':this.nodes[key]['link'],'nodetype':this.nodes[key]['nodetype'],'maxMass':maxMass});	
+					    sys.addNode(key.replace( /(:|\.|\[|\])/g, "\\$1") ,{'color':this.graphStyle[this.nodes[key]["node_cmodel"]].color,'color_original':this.graphStyle[this.nodes[key]["node_cmodel"]].color,'shape':'rect','label':currentNodeLabel,'label_full':this.nodes[key]["label"],'label_short':currentNodeLabel,'mass':mass,'link':this.nodes[key]['link'],'nodetype':this.nodes[key]['nodetype'],'maxMass':maxMass});	
 						}
 					else
 						{
-						sys.addNode(key.replace( /(:|\.|\[|\])/g, "\\$1") ,{'color':'green','color_original':'green','shape':'rect','label': this.nodes[key]["label"],'label_full':this.nodes[key]["label"],'maxMass':maxMass});	
+							
+						sys.addNode(key.replace( /(:|\.|\[|\])/g, "\\$1") ,{'color':'green','color_original':'green','shape':'rect','label': 'Object','label_full':this.nodes[key]["label"],'label_short':'O','link':this.nodes[key]['link'],'nodetype':this.nodes[key]['nodetype'],'mass':mass,'maxMass':maxMass});	
 						}
 					
 			    }
@@ -419,7 +439,7 @@ Drupal.behaviors.vlot = {
 						/*g.addEdge(key.replace( /(:|\.|\[|\])/g, "\\$1" ), relation.replace( /(:|\.|\[|\])/g, "\\$1" ), {directed: true});*/
 						for (var predicate in this.nodes[key]["relates_to"][relation])
 							{
-							sys.addEdge(key.replace( /(:|\.|\[|\])/g, "\\$1" ),relation.replace( /(:|\.|\[|\])/g, "\\$1" ),{directed:true,length:0.5, pointSize:3,label:'#'+this.nodes[key]["relates_to"][relation][predicate],showText:false})	
+							sys.addEdge(key.replace( /(:|\.|\[|\])/g, "\\$1" ),relation.replace( /(:|\.|\[|\])/g, "\\$1" ),{directed:true,length:edgelength, pointSize:3,label:'#'+this.nodes[key]["relates_to"][relation][predicate],showText:false})	
 								
 							}
 						
