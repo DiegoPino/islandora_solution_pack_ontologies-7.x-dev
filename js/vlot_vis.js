@@ -127,8 +127,8 @@
                   gravitationalConstant: -2000,
                   centralGravity: 0.1,
                   springLength: 95,
-                  springConstant: 0.05,
-                  damping: 0.1
+                  springConstant: 0.04,
+                  damping: 0.9
                 },
               },
               edges: {style:"arrow"},
@@ -143,8 +143,8 @@
             if (totalnodes>80)
               {
                 options.smoothCurves = false;
-                options.freezeForStabilization = true;
-                
+                //options.freezeForStabilization = true;
+                options.clustering = false;
               }
               
             network = new vis.Network(container, data, options);
