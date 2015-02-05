@@ -144,7 +144,7 @@
               {
                 options.smoothCurves = false;
                 options.freezeForStabilization = true;
-                options.clustering = true;
+                
               }
               
             network = new vis.Network(container, data, options);
