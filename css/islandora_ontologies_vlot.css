@@ -19,3 +19,10 @@
 .islandora-ontologies-vlot-linkable{
 	cursor:pointer;
 }
+
+.islandora-ontologies-vlot-graph
+{
+ border: 1px solid #ddd;
+ padding: 15px;
+ width:100%;
+}

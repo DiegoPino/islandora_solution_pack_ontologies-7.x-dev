@@ -8,15 +8,7 @@
  * Implements hook_menu().
  */
 function islandora_ontologies_menu() {
- /* $items['islandora/object/%/manage/relationships'] = array(
-    'title' => 'Relationships',
-    'description' => 'Add, remove, or validate related objects',
-    'file' => 'includes/Main.inc',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('islandora_ontologies_display_relationships', 2),
-    'access arguments' => array(FEDORA_METADATA_EDIT),
-    'type' => MENU_LOCAL_TASK,
-  );*/
+
    $items['islandora/object/%islandora_object/parsedontology'] = array(
        'weight' => 4,
        'title' => t('Ontology Association'),
@@ -347,13 +339,6 @@ function islandora_ontologies_object_autocomplete($cmodel,$x2) {
 
 function islandora_ontologies_ontologies_ontologyCmodel_islandora_ingest_steps(array $form_state) {
   return array(
-    /*'islandora_ontologies_target_cmodel_form' => array(
-      'weight' => 2,
-      'type' => 'form',
-      'form_id' => 'islandora_ontologies_target_cmodel_form',
-      'module' => 'islandora_ontologies',
-      'file' => 'includes/target_cmodel.form.inc',
-    ),*/
     'islandora_ontologies_owl_upload_form' => array(
       'weight' => 5,
       'type' => 'form',
@@ -366,70 +351,40 @@ function islandora_ontologies_ontologies_ontologyCmodel_islandora_ingest_steps(a
 
  /**
  * Implements VLOT javascript libraries
- * This Libraries allow a visual representation of relateed objects using arbor.js and our own implementation
+ * This Libraries allow a visual representation of related objects using arbor.js and our own implementation
  */
 function  islandora_ontologies_library() {
 		  $path=drupal_get_path('module', 'islandora_ontologies');
 		  
-		  /*$libraries['islandora_ontologies_graphkit'] = array(
-		    'title' => 'islandora ontologies graphkit',
-		    'version' => 1.0,
-		    'js' => array(
-		      array(
-		        'type' => 'file',
-		         'data' => "$path/js/raphael-min.js",
-		         'group' => JS_LIBRARY,
-		         'preprocess' => FALSE,
-		         'weight' => 2,
-		      ),
-		      array(
-		        'type' => 'file',
-		        'data' => "$path/js/vlot.js",
-		        'group' => JS_LIBRARY,
-		        'preprocess' => FALSE,
-		        'weight' => 4,
-		      ),
-		    ), 
-		  );*/
-			
 			  $libraries['islandora_ontologies_vlot'] = array(
 			  		    'title' => 'islandora ontologies vlot',
-			  		    'version' => 1.0,
-					    'css' => array(
-					      "$path/css/islandora_ontologies_vlot.css" => array(
+			  		    'version' => 1.1,
+					      'css' => array(
+					     
+                  "$path/css/islandora_ontologies_vlot.css" => array(
 					        'type' => 'file',
 					        'media' => 'screen',
 					      ),
-					  ),
+					      "$path/js/vis/dist/vis.min.css" => array(
+					        'type' => 'file',
+					        'media' => 'screen',
+					      ),
+          ),
+        
 			  		    'js' => array(
 			  		      array(
 			  		        'type' => 'file',
-			  		         'data' => "$path/js/arbor.js",
+			  		         'data' => "$path/js/vis/dist/vis.min.js",
 			  		         'group' => JS_LIBRARY,
 			  		         'preprocess' => FALSE,
 			  		         'weight' => 2,
 			  		      ),
 			  		      array(
 			  		        'type' => 'file',
-			  		         'data' => "$path/js/arbor-tween.js",
-			  		         'group' => JS_LIBRARY,
-			  		         'preprocess' => FALSE,
-			  		         'weight' => 3,
-			  		      ),
-			  		      array(
-			  		        'type' => 'file',
-			  		         'data' => "$path/js/graphics.js",
-			  		         'group' => JS_LIBRARY,
-			  		         'preprocess' => FALSE,
-			  		         'weight' => 4,
-			  		      ),
-			  		     
-			  		      array(
-			  		        'type' => 'file',
-			  		        'data' => "$path/js/vlot.js",
+			  		        'data' => "$path/js/vlot_vis.js",
 			  		        'group' => JS_LIBRARY,
 			  		        'preprocess' => FALSE,
-			  		        'weight' => 5,
+			  		        'weight' => 3,
 			  		      ),
 			  		    ), 
 			  		  ); 
@@ -475,7 +430,7 @@ function islandora_ontologies_vlot_get_info($graphstyle= NULL) {
 	    else {
 	      $graph_info = module_invoke_all('islandora_ontologies_vlot_info');
 
-	      // Let other modules alter the map info.
+	      // Let other modules alter the vlot info.
 	      drupal_alter('islandora_ontologies_vlot_info',  $graph_info);
 
 	      cache_set("islandora_ontologies_vlot_info",  $graph_info);
@@ -516,20 +471,21 @@ function islandora_ontologies_build_vlot($graphstyle=array(), $nodes = array(), 
    '#default_value' => t('Click over an Object to select'),
   '#attributes' => array(
     'id' =>  $vlot_info_id,
-   'class' => 'islandora-ontologies-vlot-info',
+    'class' => 'islandora-ontologies-vlot-info',
   ),
 ),	
   
       
 	  'canvas'=>array(
     '#theme' => 'html_tag',
-    '#tag' => 'canvas',
+    '#tag' => 'div',
     '#value' => '',
     '#attributes' => array(
       'id' =>  $graph_id,
-	  'width' => $width,
-	  'height' => $height,
-      'style' => 'height:' .$height.'px;width:'.$width.'px',
+      'class' => 'islandora-ontologies-vlot-graph',
+      'height' => $height,
+    'style' => 'height:' .$height.'px;',
+      
     ),
   ));
 
