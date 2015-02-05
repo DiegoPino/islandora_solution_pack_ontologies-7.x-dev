@@ -49,10 +49,11 @@
       
               
             
+          var totalnodes= 0;
          
             for (var key in this.nodes) {
               if (this.nodes.hasOwnProperty(key)) {
-               
+                totalnodes++;
                 if (this.nodes[key]['nodetype']=='current_node')
                   {
                     
@@ -124,10 +125,10 @@
                 barnesHut: {
                   enabled: true,
                   gravitationalConstant: -2000,
-                  centralGravity: 0.2,
+                  centralGravity: 0.1,
                   springLength: 95,
-                  springConstant: 0.04,
-                  damping: 0.09
+                  springConstant: 0.05,
+                  damping: 0.1
                 },
               },
               edges: {style:"arrow"},
@@ -138,7 +139,14 @@
               hideEdgesOnDrag: true,
               groups: groupoptions 
             };
-          
+             console.log(totalnodes);
+            if (totalnodes>80)
+              {
+                options.smoothCurves = false;
+                options.freezeForStabilization = true;
+                options.clustering = true;
+              }
+              
             network = new vis.Network(container, data, options);
             network.on('select', function(params) {
       				var newhtml= "";
