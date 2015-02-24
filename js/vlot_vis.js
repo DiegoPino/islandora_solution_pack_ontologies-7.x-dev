@@ -120,33 +120,35 @@
             }
             // create a network
             var options = {
-              configurePhysics:false,
+              //configurePhysics:true,
               physics: {
                 barnesHut: {
                   enabled: true,
-                  gravitationalConstant: -2000,
-                  centralGravity: 0.1,
+                  gravitationalConstant: -3000,
+                  centralGravity: 0.05,
                   springLength: 95,
-                  springConstant: 0.04,
-                  damping: 0.9
+                  springConstant: 0.05,
+                  damping: 0.3
                 },
               },
               edges: {style:"arrow"},
               smoothCurves:true,
               stabilize: true,
               navigation: true,
-              keyboard: true,
+              keyboard: false,
               hideEdgesOnDrag: true,
               groups: groupoptions 
             };
              console.log(totalnodes);
-            if (totalnodes>80)
+            if (totalnodes>150)
               {
                 options.smoothCurves = false;
                 //options.freezeForStabilization = true;
                 options.clustering = false;
               }
-              
+              if (totalnodes>150) {
+                options.stabilizationIterations = 5000;
+              }
             network = new vis.Network(container, data, options);
             network.on('select', function(params) {
       				var newhtml= "";
