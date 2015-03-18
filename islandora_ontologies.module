@@ -388,6 +388,38 @@ function  islandora_ontologies_library() {
 			  		      ),
 			  		    ), 
 			  		  ); 
+      			  $libraries['islandora_ontologies_manage_vlot'] = array(
+      			  		    'title' => 'islandora ontologies manage vlot',
+      			  		    'version' => 1.1,
+      					      'css' => array(
+					     
+                        "$path/css/islandora_ontologies_vlot.css" => array(
+      					        'type' => 'file',
+      					        'media' => 'screen',
+      					      ),
+      					      "$path/js/vis/dist/vis.min.css" => array(
+      					        'type' => 'file',
+      					        'media' => 'screen',
+      					      ),
+                ),
+        
+      			  		    'js' => array(
+      			  		      array(
+      			  		        'type' => 'file',
+      			  		         'data' => "$path/js/vis/dist/vis.min.js",
+      			  		         'group' => JS_LIBRARY,
+      			  		         'preprocess' => FALSE,
+      			  		         'weight' => 2,
+      			  		      ),
+      			  		      array(
+      			  		        'type' => 'file',
+      			  		        'data' => "$path/js/vlot_manage.js",
+      			  		        'group' => JS_LIBRARY,
+      			  		        'preprocess' => FALSE,
+      			  		        'weight' => 3,
+      			  		      ),
+      			  		    ), 
+      			  		  ); 
 			  
 			  
 			  
@@ -468,14 +500,12 @@ function islandora_ontologies_build_vlot($graphstyle=array(), $nodes = array(), 
   '#theme' => 'html_tag',
   '#tag' => 'div',
   '#value' => t('Click over an Object to select'),
-   '#default_value' => t('Click over an Object to select'),
+  '#default_value' => t('Click over an Object to select'),
   '#attributes' => array(
     'id' =>  $vlot_info_id,
     'class' => 'islandora-ontologies-vlot-info',
   ),
 ),	
-  
-      
 	  'canvas'=>array(
     '#theme' => 'html_tag',
     '#tag' => 'div',
@@ -507,4 +537,51 @@ function islandora_ontologies_build_vlot($graphstyle=array(), $nodes = array(), 
   return $build;
 }
 
-				
+function islandora_ontologies_build_manage_vlot($graphstyle=array(), $nodes = array(), $width='400', $height = '400') {
+  $graph_id = drupal_html_id('graph-id-manage1');
+  $checked_id = drupal_html_id('selected-node-id1');
+  $vlot_info_id = drupal_html_id('vlot_info_manage_id');
+  $build = array(
+  'vlotinfo'=>array(
+  '#theme' => 'html_tag',
+  '#tag' => 'div',
+  '#value' => t('Click over an Object to select'),
+  '#default_value' => t('Click over an Object to select'),
+  '#attributes' => array(
+    'id' =>  $vlot_info_id,
+    'class' => 'islandora-ontologies-vlot-info',
+  ),
+),	
+	  'canvas'=>array(
+    '#theme' => 'html_tag',
+    '#tag' => 'div',
+    '#value' => '',
+    '#attributes' => array(
+      'id' =>  $graph_id,
+      'class' => 'islandora-ontologies-vlot-graph',
+      'height' => $height,
+    'style' => 'height:' .$height.'px;',
+      
+    ),
+  ));
+
+ 
+ 
+  $settings = array(
+    'graphId' => $graph_id,
+    'graphStyle' => $graphstyle,
+    'nodes' => $nodes,
+  );
+  
+  
+  $build['#attached']['js'][] = array(
+    'data' => array('vlot_manage' => array($settings)),
+    'type' => 'setting',
+  );
+
+  // Load the library
+  drupal_add_library('islandora_ontologies', 'islandora_ontologies_manage_vlot');
+  return $build;
+}
+
+

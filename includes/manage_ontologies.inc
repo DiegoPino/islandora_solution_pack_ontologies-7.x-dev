@@ -109,31 +109,6 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
  
 	$form_state['ontologyobject_pid'] =$PID;
 	return $form;
- 
- 
- 
- 
-	// foreach ($content_models as $pid => $content_model) {
-    
-		//	}
-    
-		/* error_log($xmlfilelink,1);
-		$parser->parse($xmlfilelink);
-		$triples = $parser->getTriples();
-		$ns=$parser->parser->nsp;
-		$index = ARC2::getSimpleIndex($triples, false) ;
-		$triples = ARC2::getTriplesFromIndex($index);
-		//$terms = islandora_ontologies_rdfx_fetch_terms($triples);
-		//foreach ($parser->parser->nsp as $uri => $prefix) {
-		//     $namespaces[$prefix] = $uri;
-		//}
-  
-		// $vocabulary = array(
-		//    'terms' => $terms,
-		//    'namespaces' => $namespaces,
-		//);*/
- 
-		//return (array('triples'=>$triples,'ns'=>$ns,'index'=> $index));
 	}
 
 /**
@@ -180,14 +155,9 @@ function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, ar
 					}
 				break;
 				default:
-				//$subject->relationships->remove(ISLANDORA_RELS_EXT_URI, 'hasLocalOntology', NULL, RELS_TYPE_URI);	 with NULL removes every relation that matches the name
 				$subject->relationships->remove(ISLANDORA_RELS_EXT_URI, 'hasLocalOntology', $ontologyobject_pid, RELS_TYPE_URI);		
 			 	drupal_set_message(t('Ontology Class association for Object @ontologyobject_pid from Content Model @label removed', array('@ontologyobject_pid'=>$ontologyobject_pid,'@label' => $subject['label'])));	
 				}
-		//First we remove any existing relation. 
-		//$subject->relationships->remove(ISLANDORA_RELS_EXT_URI, 'hasLocalOntology', NULL, RELS_TYPE_URI);
-		//$relationships->add($predicate_uri, $predicate, $object, $literal);
-		//
 		}
 	}	
 	 $form_state['redirect'] = NULL; 
@@ -207,6 +177,7 @@ function islandora_ontologies_manage_relations(AbstractObject $object) {
   	module_load_include('inc', 'islandora_ontologies', 'includes/utilities');
 	module_load_include('inc', 'islandora_ontologies', 'includes/add_relation');
 	module_load_include('inc', 'islandora_ontologies', 'includes/del_relation');
+  module_load_include('inc', 'islandora_ontologies', 'includes/vlot_relation');
 	
 	  $return_form = array(
 	    'manage_relations' => array(),
@@ -233,6 +204,7 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	  $access = array(
 	    'add_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
 	    'del_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
+      //'vlot_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
 	  );
 	 
 	  // Build forms for only the accessible elements.
@@ -242,7 +214,15 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	    $forms[$element] = $accessible ? drupal_get_form($form, $object) : NULL;
 	  }
 	  
-	  $form_state['manage_relations']['add_relationships'] = array(
+	 /* $form_state['manage_relations']['vlot'] = array(
+	    '#id' => 'visual-manage-relations',
+	    '#group' => 'manage_relations',
+	    '#access' => $access['del_relationships'] && $access['del_relationships'],
+	    '#type' => 'fieldset',
+	    '#title' => t('Add or remove relationships visually'),
+	    'form' => $forms['vlot_relationships'],
+	  );*/
+    $form_state['manage_relations']['add_relationships'] = array(
 	    '#id' => 'add-relations',
 	    '#group' => 'manage_relations',
 	    '#access' => $access['add_relationships'],
@@ -258,6 +238,10 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	    '#title' => t('Manage existing relationships'),
 	    'form' => $forms['del_relationships'],
 	  );
+	  
+    
+    
+    
 	  return $form_state;
 	}	
 	

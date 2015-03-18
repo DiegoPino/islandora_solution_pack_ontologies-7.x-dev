@@ -308,7 +308,7 @@ function islandora_ontologies_filter_existing_relations($subject, array $subject
 				if ($rel_object)
 					{
 					$rel['object']['cmodels']=array_map(function($cm){return "info:fedora/".$cm;},$rel_object->models);//We need the info:fedora/ part to compare againts de ontology definitions	
-					}
+          }
 					else{
 					$rel['object']['cmodels']=array('error');	
 					}
@@ -363,9 +363,9 @@ function islandora_ontologies_filter_existing_relations($subject, array $subject
 * Optional: if onClass and/or onProperty is given, it limits it return values to this matches
 * @param $ontology_objectpid. The pid of the object that contains the Ontology 
 * @param $subject. The Class that is being restricted (ContentmodelPID) with or without the info:fedora/ part
-* @param $rels. Current Relations array for this object. We already discarded those properties who are not defined in this ontology. If empty sould be of type array
+* @param $rels. Current Relations array for this object. We already discarded those properties who are not defined in this ontology. If empty should be of type array
 * @param $onClass. only those restrictions that apply to a givenClass (otherContentmodelPID) with or without the info:fedora/ part. Default Null
-* @param @onProperty. only those restrictions for a specific property. Full with ns.
+* @param $onProperty. only those restrictions for a specific property. Full with ns.
 * @return $restrictionsOnproperties with the properties,onClass and cardinality/existence restrictions and some human readable messages
 */
 function islandora_ontologies_get_restricted_properties($ontology_objectpid,$subject,$rels,$onClass=NULL,$onProperty=NULL)
@@ -886,8 +886,8 @@ function islandora_ontologies_get_all_for_cmodel($contentmodelpid)
 * This function traverses the OWL graph in search for paths between objects belonging to classes and builds and adjacency list. 
 * Fedoras implementation/Mulgara does not allow arbritrary paths to be traversed(al leats not optimal), so we must know how to get from point 1(object) to any other object->of class in an ontology to ask for a 
 * local graph. Even more, be can cache the returning structure and only update the cache in the rare case the attached ontologies are updated.		
-* @param any contentmodel pid
-* @return adjacency list of neighborns and their relations	
+* @param $subject any contentmodel pid
+* @return adjacency list of neightborns and their relations	
 * @todo make this a class				
 */	
 function islandora_ontologies_get_graph_path($subject)
@@ -905,9 +905,10 @@ $graph = array(
   'E' => array('B' => 3, 'C' => 2, 'D' => 1, 'F' => 5),
   'F' => array('A' => 6, 'C' => 3, 'D' => 2, 'E' => 5),
 );*/
-		$adjacency=array();
-		$adjacencyparsed=array();
-		$adjacencyfull=array();
+		$adjacency = array();
+		$adjacencyparsed = array();
+		$adjacencyfull = array();
+     
 		
 		try {
 			$contentmodel_object =islandora_object_load($subject);
@@ -924,8 +925,8 @@ $graph = array(
 				foreach ($tmgraph as $ontology => $relations)
 					{	
 					$adjacency[$ontology]=islandora_ontologies_get_all_restricted_properties($ontology);
-					//New we have an array with every $ontology as key and classes and their relations
-					//Lets clean this up. We can different types of adjacency list. 
+					//Now we have an array with every $ontology as key and classes and their relations
+					//Lets clean this up. We can make different types of adjacency list. 
 					//1.-One with classes as values and keys 
 					//2. and one with properties as keys and values.
 					//3.- some mixup from 1. and 2.
@@ -941,7 +942,6 @@ $graph = array(
 								{
 								if ((array_key_exists('onClass',$propinfo)) && (!empty($propinfo['onClass'])))
 									{
-								    
 									$adjacencyparsed[$class][$propinfo['onClass']][]=$propname;	
 									$adjacencyparsed[$class][$propinfo['onClass']]=array_unique($adjacencyparsed[$class][$propinfo['onClass']]);
 									}
@@ -958,7 +958,7 @@ $graph = array(
 										}
 											
 									}
-									if 	((array_key_exists('inverseopf',$propinfo)) && (!empty($propinfo['inverseof'])))
+									if 	((array_key_exists('inverseof',$propinfo)) && (!empty($propinfo['inverseof'])))
 										{
 										if (array_key_exists($propinfo['onClass'],$adjacencyparsed))
 											{	
@@ -1280,10 +1280,10 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 						
 					}						
 			}//End if has restriction
-				
+      
 			foreach ($restrictionsOnproperties as $prop => $info)//Add namespace and local at last
 				{
-		
+		      
 					$uri_parts = ARC2::splitURI($prop);
 
 					$restrictionsOnproperties[$prop]['ns']=$uri_parts[0];
@@ -1300,11 +1300,10 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 			return ($graph_path);
 		
 	}
-// Travese Graph implemention
+// Traverse Graph implemention
 // breadth first Based on http://www.sitepoint.com/data-structures-4/ by Ignatius Teo
 // depthFirstSearch my own. 
-class islandora_ontologies_adjacency_graph
-	{
+class islandora_ontologies_adjacency_graph {
 	  protected $graph;
 	  protected $visited = array();
 	  protected $pathdepth;
@@ -1394,7 +1393,7 @@ class islandora_ontologies_adjacency_graph
 	  }
 	  public function getdepthFirst($vertex)
 	  	{
-	  	  $this->depthFirstSearch($vertex);
+	  	$this->depthFirstSearch($vertex);
 		  $pathdepthtmp=$this->pathdepth;
 		  $this->pathdepth=array();
 		  return $pathdepthtmp;
@@ -1402,14 +1401,12 @@ class islandora_ontologies_adjacency_graph
 	  	}
 	 
 	 
-	  protected function depthFirstSearch($vertex,$path=array(),$localvisited=array()) {
+	  protected function depthFirstSearch($vertex, $path=array(), $localvisited=array()) {
 	     $localvisited[$vertex] = true;
 	    
 	      if (!empty($this->graph[$vertex])) {
 	        // for each adjacent neighbor
-			$tovisit=false;
-            
-			
+			     $tovisit=false;
 			foreach ($this->graph[$vertex] as $vertex2=>$props) {
 				
 			  if (!array_key_exists($vertex2,$localvisited)||(!$localvisited[$vertex2])) {
@@ -1426,10 +1423,8 @@ class islandora_ontologies_adjacency_graph
 		  if (!$tovisit)
 		  	{
 				$path[$vertex]=array();
-			 $this->pathdepth[]=$path;
-			  //echo "path:".$path.'->'. $vertex.PHP_EOL;
-			  //dpm("path:".$path.'->'. $vertex);
-			  //dpm($finalpath);
+			  $this->pathdepth[]=$path;
+			 
 			   return ;
 		  }
 	      }
@@ -1437,7 +1432,7 @@ class islandora_ontologies_adjacency_graph
 		  {
 			$path[$vertex]=array();
 		 $this->pathdepth[]=$path;
-	  //dpm($finalpath);
+	 
 	   return ;
 		  }
 		  	  
@@ -1445,3 +1440,110 @@ class islandora_ontologies_adjacency_graph
 	  	  	  
 	}
 	
+/** LCS Class Implementation 
+* @link http://en.wikipedia.org/wiki/Longest_common_subsequence_problem
+* This class processes every calculated path for a given Ontology /graph) and searches for common partial subpaths
+*  
+*/
+class islandora_ontologies_LCS {
+  protected $matrix;
+  private $paths_array;
+  /**
+  * @param $paths is an associative array containing a list of arrays with CMODELS and outgoing predicates sequences for a particular ontology: 
+  * Each numeric key holds an array with a calculated path. Note that the last CMODEL, associative key, does not has an empty array. This is the last node 
+  * of a path and has no outgoing relations. This structure is identical to the return value of class islandora_ontologies_adjacency_graph, method getdepthFirst($vertex).
+  * Example
+  * array( 
+  *   0 => array (
+  *    'info:fedora/biodiversity:LocationCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#locatesEvent'
+  *      ),
+  *    'info:fedora/biodiversity:EventCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#eventOf'
+  *      ),
+  *    'info:fedora/biodiversity:OccurrenceCModel' => array(
+  *      'http://xmlns.com/foaf/0.1/depicts'
+  *      ),
+  *    'info:fedora/islandora:sp_basic_image' => array(
+  *      'http://xmlns.com/foaf/0.1/depiction'
+  *      ),
+  *    'info:fedora/biodiversity:TaxonCModel' => array(
+  *      'http://xmlns.com/foaf/0.1/depiction'
+  *      ),
+  *    'info:fedora/biodiversity:IdentificationCModel' => array(
+  *     ),
+  *  ),
+  *  1 => array (
+  *    'info:fedora/biodiversity:LocationCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#locatesEvent'
+  *      ),
+  *    'info:fedora/biodiversity:EventCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#eventOf'
+  *      ),
+  *    'info:fedora/biodiversity:OccurrenceCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#hasIdentification'
+  *      ),
+  *    'info:fedora/biodiversity:IdentificationCModel' => array(
+  *      'http://www.semanticweb.org/dpino/ontologies/2014/3/untitled-ontology-3#identifiedAs'
+  *      ),
+  *    'info:fedora/biodiversity:TaxonCModel' => array(
+  *      'http://xmlns.com/foaf/0.1/depicts'
+  *      ),
+  *    'info:fedora/islandora:sp_basic_image' => array(
+  *     ),
+  *  ),
+  *)  
+  */
+  public function __construct($paths) {
+    $this->$paths = $paths;
+  }
+  /**
+  * This method takes two paths and searches for a common subpath(subquence). It also stores where this common subpath starts in every path. 
+  * This is not really needed because every path is defined as a Directed Acyclic graph, so nodes(CMODELS) should never repeat.
+  */
+  public function computeLCS() {
+    $m = count($pathA);
+    $n = count($pathB);
+    $matrix = array();
+    //Fill the initial matrix
+    for ($i = $m - 1; $i >= 0; $i--) {
+                for ($j = $n - 1; $j >= 0; $j--) {
+                    if ($pathA[$i] === $pathB[$j]) {
+                        $matrix[$i][$j] =
+                            (isset($matrix[$i + 1][$j + 1]) ? $matrix[$i + 1][$j + 1] : 0) +
+                            1;
+                    } else {
+                        $matrix[$i][$j] = max(
+                            (isset($matrix[$i + 1][$j]) ? $matrix[$i + 1][$j] : 0),
+                            (isset($matrix[$i][$j + 1]) ? $matrix[$i][$j + 1] : 0)
+                        );
+                    }
+                }
+            }
+    //Now use this matrix to compute the real longest common subsequence
+    $i = 0;
+    $j = 0;
+    $lcspattern = array();
+    while ($i < $m && $j < $n) {
+        if ($pathA[$i] === $pathB[$j]) {
+          if (sizeof($lcspattern) == 0) { //store the key/position where the subsequence starts in every Path
+             $lcspattern_pos[]=$i;
+          }
+          $lcspatterns[] = $pathA[$i];
+            
+          $i++;
+          $j++;
+        } 
+        elseif ((isset($matrix[$i + 1][$j]) ? $matrix[$i + 1][$j] : 0) >= (isset($matrix[$i][$j + 1]) ? $matrix[$i][$j + 1] : 0)) {
+          $i++;
+        } 
+        else {
+          $j++;
+        }
+    }
+    return $lcspattern;
+  
+  }
+}
+    
+
