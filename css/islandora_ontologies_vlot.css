@@ -5,24 +5,75 @@
 */
 
 .islandora-ontologies-vlot-info {
-  background-color: #F2F2F2;
-  border: 1px solid #ddd;
-  -webkit-border-radius: 5px;
-  -moz-border-radius: 5px;
-  border-radius: 5px;
-  padding: 15px;
-  min-width: 250px;
-  min-height:60px;
-  display:block;
+	background-color: #F2F2F2;
+	border: 1px solid #ddd;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+	padding: 15px;
+	min-width: 250px;
+	min-height: 60px;
+	display: block;
 }
 
-.islandora-ontologies-vlot-linkable{
-	cursor:pointer;
+.islandora-ontologies-vlot-linkable {
+	cursor: pointer;
 }
 
-.islandora-ontologies-vlot-graph
-{
- border: 1px solid #ddd;
- padding: 15px;
- width:100%;
+.islandora-ontologies-vlot-graph {
+	border: 1px solid #ddd;
+	padding: 15px;
+	width: 100%;
+}
+
+div.descriptionContainer {
+	float: left;
+	height: 30px;
+	width: 160px;
+	padding-left: 5px;
+	padding-right: 5px;
+	line-height: 30px;
+}
+
+div.iconContainer {
+	float: left;
+}
+
+div.legendElementContainer {
+	display: inline-block;
+	width: 200px;
+	height: 30px;
+	border-style: solid;
+	border-width: 1px;
+	border-color: #e0e0e0;
+	background-color: #ffffff;
+	margin: 4px;
+	padding: 4px;
+	font-size:80%;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	cursor: pointer;
+}
+
+div.legendElementContainer.grouphidden {
+	background-color: #F2F2F2;
+	opacity: 0.5;
+    filter: alpha(opacity=50);
+}
+
+svg.legendIcon {
+	width: 20px;
+	height: 20px;
+  padding:2px;
+  text-align:center;
+}
+
+div.externalLegend {
+	position: relative;
+	margin-left: -5px;
+	width: 900px;
 }
