@@ -216,7 +216,7 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 		
 		$fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
 		$xmlfilelink = $fedora_url."/objects/".$PID."/datastreams/ONTOLOGY/content";
-		$graph = new Graphite();//@TODO Chek if it´s posible to combine all ontologies in one Graphite object and parse the whole thing 
+		$graph = new Graphite();//@TODO Check if it´s posible to combine all ontologies in one Graphite object and parse the whole thing 
 		$graph->load($xmlfilelink);
 		foreach($graph->allOfType('owl:ObjectProperty')->sort("rdfs:label") as $property)
 		{
@@ -228,7 +228,7 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 			$inverseof_array=array();
 			if (!$property->get("-owl:onProperty")->get("-rdfs:subClassOf")->isNull())
 			{
-			foreach($property->all("-owl:onProperty") as $prop)//Could be multiple, i the same property is used across mult. class restrictions. Fixes previous flase asumption!
+			foreach($property->all("-owl:onProperty") as $prop)//Could be multiple, if the same property is used across mult. class restrictions. Fixes previous false asumption!
 				{
 				
 				
@@ -368,7 +368,7 @@ function islandora_ontologies_filter_existing_relations($subject, array $subject
 * @param $onProperty. only those restrictions for a specific property. Full with ns.
 * @return $restrictionsOnproperties with the properties,onClass and cardinality/existence restrictions and some human readable messages
 */
-function islandora_ontologies_get_restricted_properties($ontology_objectpid,$subject,$rels,$onClass=NULL,$onProperty=NULL)
+function islandora_ontologies_get_restricted_properties($ontology_objectpid,$subject,$rels,$onClass = NULL,$onProperty = NULL)
 {
 	$module_path = drupal_get_path('module', 'islandora_ontologies');
 	include_once($module_path.'/arc2/ARC2.php');
@@ -427,12 +427,19 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 			),$rb['maxNumRel']->EqualTo(NULL)		
 		),
 		function() use ($context,&$restrictionsOnproperties) {
-	       // if ($context['maxNumRel']-$context['matchedNumRels'])>0)//Means we have some space for another
-			
 			$restrictionsOnproperties[$context['OnProperty']]['allowsmore']=TRUE;
-				
-			
-	    }
+      
+      //We should denote how many we can add to extend our functionallity.We will return max and current. We won't calculate the 
+      //difference here because we could need at some point the whole picture, not only how many more we can add.
+      $restrictionsOnproperties[$context['OnProperty']]['currentnum']=$context['matchedNumRels'];
+      if (!isset($context['maxNumRel'])||($context['maxNumRel'] === NULL)) { //MEANS unlimited
+        //We could use INF constant, but i think this does not make sense, better a human parsable string.
+        $restrictionsOnproperties[$context['OnProperty']]['currentmax']="unlimited";
+      }
+      else {
+       $restrictionsOnproperties[$context['OnProperty']]['currentmax']=$context['maxNumRel'];
+      }
+    }
 	);
 		
 	$cardinalitynotmet=$rb->create(
@@ -474,16 +481,9 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 				$rb['OnClass'])->NotEqualTo(NULL),
 				function() use ($context)
 					{
-						//print_r($context['actualOnClass']);
-						//print_r($context['OnClass']);
-						//echo "hay otras\n\r";
 					}
-			
 			);
-				
-			
-					
-	
+
 	
 	$propertyonlyClass = $rb->create(
 	$rb->logicalAnd($propertymetsClass,$rb->logicalNot($otherrelationssameontology)),
@@ -517,12 +517,25 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 	//construction blocks end
 	
 	
-	
+	//April 2015
+  //There is something odd on how protege writes restrictions. max and min are split inside separate subclassof ->Restriction for the same onProperty. Assuming Protege will do the same for other types of
+  //Combined restrictions
+  //This may make sense for a human, but means i got to accumulated restrictions first before passing them trough our rules.
+  //My solution. 
+  /*
+			if (!$property->get("-owl:onProperty")->get("-rdfs:subClassOf")->isNull())
+			{
+			foreach($property->all("-owl:onProperty") as $prop)//Could be multiple, if the same property is used across mult. class restrictions. Fixes previous false asumption!
+				{
+  
+  */
+  
+  
+  
 	foreach($graph->allOfType('owl:Class') as $class)
 	{
-		if ($class->uri==$subject)
+		if ($class->uri == $subject)
 		{	
-			
 			foreach($class->all('rdfs:subClassOf') as $thing)
 			{
 				if ($thing->isType('owl:Restriction'))
@@ -530,6 +543,9 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 				$context['OnClass']=NULL;//In case we don´t have any	
 				$context['inverse']=NULL;
 				$context['inverseof']=NULL;
+        //reset this limits so we don't get stuck on them on every foreach
+        unset($context['minNumRel']);
+        unset($context['maxNumRel']);  
 					//It's a local restriction 
 					//First check if there is an owl:onProperty and the property is defined in this document
 					if (($thing->has("owl:onProperty")) && ($thing->get("owl:onProperty")->has('rdf:type')))
@@ -537,11 +553,11 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 						if (!isset($onProperty))//If we have this variable set get only restrictions that match
 						{
 							
-							$context['OnProperty']=$thing->get("owl:onProperty")->uri;
+							$context['OnProperty'] = $thing->get("owl:onProperty")->uri;
 						}
 						else
 						{
-							$context['OnProperty']=$onProperty==$thing->get("owl:onProperty")->uri ? $thing->get("owl:onProperty")->uri : NULL;
+							$context['OnProperty'] = $onProperty == $thing->get("owl:onProperty")->uri ? $thing->get("owl:onProperty")->uri : NULL; //Only null if the property does not exist.
 						}
 						
 						
@@ -565,10 +581,8 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 									//Now we check if there is a onClass definition and the class is also defined in this document		
 									//Now Look if there are cardinality and existance restricctions and infere some simple rules
 									//In OWL Lite Cardinality can only be 0 or 1, we could add also owl2 owl:qualifiedCardinality for compatibility if ontology was generated using i.e Protege
-						if (($thing->has("owl:cardinality")) || ($thing->has("owl:qualifiedCardinality")))
+						if ( ($thing->has("owl:cardinality")) || ($thing->has("owl:qualifiedCardinality")) )
 						{
-							
-							
 							if ($thing->has("owl:cardinality"))
 							{
 							
@@ -807,7 +821,7 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 							//Nothing to restrain, no onProperty jump to the next
 							continue;	
 						}			
-			
+            
 					}
 					else
 					{
@@ -1040,6 +1054,17 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 		),
 		function() use ($context,&$restrictionsOnproperties) {
 		$restrictionsOnproperties[$context['OnProperty']]['allowsmore']=TRUE;
+    $restrictionsOnproperties[$context['OnProperty']]['currentnum']=$context['matchedNumRels'];
+    
+    if (!isset($context['maxNumRel'])||($context['maxNumRel'] === NULL)) { //MEANS unlimited
+      //We could use INF constant, but i think this does not make sense, better a human parsable string.
+      $restrictionsOnproperties[$context['OnProperty']]['currentmax']="unlimited";
+      
+    }
+    else
+    {
+     $restrictionsOnproperties[$context['OnProperty']]['currentmax']=$context['maxNumRel'];
+    }
 	    }
 	);
 		
@@ -1106,7 +1131,9 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 					$context['inverse']="";
 					$context['inverseof']="";
 					$context['OnClass']="";//In case we don´t have any	
-		
+          //reset cardinality restrictions
+          unset($context['minNumRel']);
+          unset($context['maxNumRel']);  
 					//It's a local restriction 
 					//First check if there is an owl:onProperty and the property is defined in this document
 					if (($thing->has("owl:onProperty")) && ($thing->get("owl:onProperty")->has('rdf:type')))
