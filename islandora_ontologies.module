@@ -358,7 +358,7 @@ function  islandora_ontologies_library() {
 		  
 			  $libraries['islandora_ontologies_vlot'] = array(
 			  		    'title' => 'islandora ontologies vlot',
-			  		    'version' => 1.1,
+			  		    'version' => 3.11, //Matched vis version March 2015
 					      'css' => array(
 					     
                   "$path/css/islandora_ontologies_vlot.css" => array(
@@ -390,7 +390,7 @@ function  islandora_ontologies_library() {
 			  		  ); 
       			  $libraries['islandora_ontologies_manage_vlot'] = array(
       			  		    'title' => 'islandora ontologies manage vlot',
-      			  		    'version' => 1.1,
+      			  		    'version' => 3.11,
       					      'css' => array(
 					     
                         "$path/css/islandora_ontologies_vlot.css" => array(
