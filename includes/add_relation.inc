@@ -161,7 +161,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 	  
 				);
 				$form['obj']['msg'] = array(
-					'#markup'=>t('<b>Select a relationship first</b>'),
+					'#markup'=>t('<strong>Select a relationship first</strong>'),
 					'#access'=>empty($value_relationship),
 				);
 				$form['obj']['target'] = array(
@@ -287,24 +287,28 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 				$value_restrictions=array();
 				if (!empty($value_relationship)) {
 					list($ontology,$property)=explode(" ",$value_relationship);//We should give more info on this...
+         
 					if ($restrictionson_properties[$subject][$ontology][$property]['allowsmore'])
 						{
-					$value_restrictions[]=t('<b>You can add more of this relations</b>');
-					$value_restrictions[]=t('<b>To Objects of type: </b>').$restrictionson_properties[$subject][$ontology][$property]['onClass'];
-						}
+					$value_restrictions[]=t('<strong>You can add more of this relations</strong>');
+          $value_restrictions[]=t('You have: ').$restrictionson_properties[$subject][$ontology][$property]['currentnum'];	
+           $value_restrictions[]=t('Your Maximum is').$restrictionson_properties[$subject][$ontology][$property]['currentmax'];	
+					$value_restrictions[]=t('<strong>To Objects of type: </strong>').$restrictionson_properties[$subject][$ontology][$property]['onClass'];
+					
+            }
 					else
 						{
-						$value_restrictions[]=t('<b>You have reached the limit for this relation!</b>');	
+						$value_restrictions[]=t('<strong>You have reached the limit for this relation!</strong>');	
 						}
 					
 					if ($restrictionson_properties[$subject][$ontology][$property]['inverse'])
 						{
 							
-						$value_restrictions[]=t('<b>This relation implements an inverse one: </b>').$restrictionson_properties[$subject][$ontology][$property]['inverse']['localname'];	
+						$value_restrictions[]=t('<strong>This relation implements an inverse one: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverse']['localname'];	
 						}
 					if ($restrictionson_properties[$subject][$ontology][$property]['inversof'])
 						{
-						$value_restrictions[]=t('<b>This relation is the inverse of: </b>').$restrictionson_properties[$subject][$ontology][$property]['inversof'].t('<p>If you wan´t both relations to be added, then you must do this from the target Object</p>');	
+						$value_restrictions[]=t('<strong>This relation is the inverse of: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inversof'].t('<p>If you wan´t both relations to be added, then you must do this from the target Object</p>');	
 						}	
 	 			    
 				}

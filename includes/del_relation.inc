@@ -25,14 +25,14 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 	
 	
 	$rows=array();
-	//dpm($currentrelations);
+	dpm($currentrelations);
 	foreach ($currentrelations as $o){
 			
 		$target_object_link="";
 		$row=array();
 		$row['namespace']['#markup'] = $o['predicate']['namespace']. " (xmlns:".$o['predicate']['alias'].")";
 		$row['relationship']['#markup'] = $o['predicate']['value'];
-		if ($o['object']['value'])
+		if (($o['object']['value']) && !($o['object']['literal']))
 		{
 			try {
 				$target_object =islandora_object_load($o['object']['value']);
@@ -87,7 +87,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 		}
 		else
 		{
-			$target_object_link_lit=$o['object']['literal']? t('literal: (@lit)',array('@lit'=>$o['object']['literal'])): " ";
+			$target_object_link_lit=$o['object']['literal']? t('literal: (@lit)',array('@lit'=>$o['object']['value'])): " ";
 			$row['object']['#markup'] = $target_object_link_lit;//@todo manage literals
 			$row['delete']['#markup'] = "";
 		}
@@ -97,12 +97,13 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 		if ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/model#') {
 			$row['delete']['#markup'] = t('Can\'t delete fedora model.');
 		}
-		if ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/relations-external#' and $o['predicate']['value'] == 'isMemberOfCollection') {
+		elseif ($o['predicate']['namespace'] == 'info:fedora/fedora-system:def/relations-external#' and $o['predicate']['value'] == 'isMemberOfCollection') {
 			$row['delete']['#markup'] = t('Manage from collection object');
 		}
-		if ($o['predicate']['namespace'] == 'http://islandora.ca/ontology/relsext#') {
+		elseif ($o['predicate']['namespace'] == 'http://islandora.ca/ontology/relsext#') {
 			$row['delete']['#markup'] = t('Manage from object policy');
 		}
+    
 		
 		
 		$rows[]=$row;
