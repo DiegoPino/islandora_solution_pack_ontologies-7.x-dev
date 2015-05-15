@@ -283,8 +283,8 @@
                  svgIcon.setAttributeNS(null, "class", "outline");
                  svgIcon.setAttributeNS(null, "style", "fill:" + node.options.color.background+";stroke:"+node.options.color.border+";stroke-width:"+2);
                  var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                 text.setAttribute('x', svgX+node.options.radius/3);
-                 text.setAttribute('y', svgY+(height/2));
+                 text.setAttribute('x', parseInt(svgX+3+node.options.radius/3));
+                 text.setAttribute('y',  parseInt(svgY+3+(height/2)));
                  text.setAttribute('fill', '#FFFFFF');
                  text.textContent = node.nodescount;
 
