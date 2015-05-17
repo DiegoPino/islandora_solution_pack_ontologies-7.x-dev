@@ -101,7 +101,7 @@
                   nodesCountByType[currentGroup]=0;
                 
                 }
-                console.log(nodesCountByType);
+                
                 visnodes.add(
                   [{
                     id: key.replace( /(:|\.|\[|\])/g, "\\$1"),
@@ -111,6 +111,7 @@
                     title: this.nodes[key]["label"],
                     shape: 'box',
                     extlink: this.nodes[key]["link"],
+                    nodetype:this.nodes[key]['nodetype'],
                   }
                 ]);
                 nodesCountByType[currentGroup]=nodesCountByType[currentGroup]+1;
@@ -197,10 +198,11 @@
               var allNodes = visnodes.get({returnType:"Object"});
               for (var nodekey in params.nodes)
                 {
-                if (allNodes[params.nodes[nodekey]].group == 'current_node') 
+                  console.log(allNodes[params.nodes[nodekey]].nodetype);
+                if (allNodes[params.nodes[nodekey]].nodetype == 'current_node') 
                   {
-                    alert(getConnectedNodes)
-                    newhtml = newhtml + "<li><i class=\"fa fa-eye\"></i>&nbsp;This is your current Object ("+allNodes[params.nodes[nodekey]].cmodel+"): "+allNodes[params.nodes[nodekey]].title+"</a></li>"
+                   
+                    newhtml = newhtml + "<li><span><i class=\"fa fa-info\">&nbspObject of type "+allNodes[params.nodes[nodekey]].cmodel+" </i></span><ul><li>&nbsp;This is your current Object: "+allNodes[params.nodes[nodekey]].title+"</li></ul></li>";
                   }
                 else {
                  
@@ -268,7 +270,7 @@
                 var svgY = 2;
                 var svg = document.createElementNS('http://www.w3.org/2000/svg',"svg");
                 var svg_g=document.createElementNS('http://www.w3.org/2000/svg',"g");
-                console.log(node);
+              
                 switch (node.options.shape) {
                     case 'box': var svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "rect"); break;
                     case 'circle':  var svgIcon = document.createElementNS("http://www.w3.org/2000/svg", "circle"); break;
@@ -283,10 +285,12 @@
                  svgIcon.setAttributeNS(null, "class", "outline");
                  svgIcon.setAttributeNS(null, "style", "fill:" + node.options.color.background+";stroke:"+node.options.color.border+";stroke-width:"+2);
                  var text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                 text.setAttribute('x', parseInt(svgX+3+node.options.radius/3));
+                 text.textContent = node.nodescount;
+                 var textsize=node.nodescount.toString().length;
+                 text.setAttribute('x', parseInt(svgX+(width/2)-(2*textsize)));
                  text.setAttribute('y',  parseInt(svgY+3+(height/2)));
                  text.setAttribute('fill', '#FFFFFF');
-                 text.textContent = node.nodescount;
+                 
 
                  
                  svg_g.appendChild(svgIcon);

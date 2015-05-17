@@ -68,8 +68,8 @@ div.legendElementContainer.grouphidden {
 svg.legendIcon {
 	width: 30px;
 	height: 30px;
-  	padding:2px;
-  	text-align:center;
+  padding:2px;
+  text-align:center;
 }
 
 div.externalLegend {
