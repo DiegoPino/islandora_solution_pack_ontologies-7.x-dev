@@ -61,7 +61,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 		
 		if ($contentmodel_object)
 		{   
-			dpm(islandora_ontologies_get_restricted_properties($PID,$contentmodelpid,array(),NULL,NULL));
+			
       $label = $contentmodel_object['label'];
 			
 			$rels = $contentmodel_object->relationships->get(ISLANDORA_RELS_EXT_URI,'hasLocalOntology',$PID,RELS_TYPE_URI);//We get a haslocalOntology relation for this ontologyPID
