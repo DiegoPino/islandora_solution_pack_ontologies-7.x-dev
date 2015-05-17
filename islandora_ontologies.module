@@ -285,24 +285,29 @@ function islandora_ontologies_ontologies_ontologyCModel_islandora_object_ingeste
 }
 
 
+function islandora_ontologies_islandora_object_purged($pid) {
 
-
+  module_load_include('inc', 'islandora_ontologies', 'includes/batch');
+  batch_set(islandora_ontologies_removeto_relations_batch($pid));
+}
 
 function islandora_ontologies_object_autocomplete($cmodel,$x2) {
  
     
-	//first check if cmodel exists.
-	//if not avoid Rels ext part
-	//$cmodel="biodiversity:TaxonCModel";	
+  //We will also have to check if the URL is external, because of Solr Cloud
+ 
+  
+
 	$json=array();
     if (isset($_GET['q'])) {
       $stub = end(explode('/', $_GET['q']));
+      $stub = islandora_solr_lesser_escape($stub);
       $qualifier = 'dc.title' . ':' . $stub . '*';
 	  $qualifier .= " OR ".'fgs_label_mt' . ':' . $stub . '*';
 	  $qualifier .= " OR ".'dc.identifier' . ':' . $stub . '*';
     }
     $params = array(
-      'fl' => array('fgs_label_mt', 'PID'),
+      'fl' => array('fgs_label_mt', 'PID', 'PID_fullurl'),
     );
     $query = "($qualifier) AND " . 'RELS_EXT_hasModel_uri_mt:"' . $cmodel . '"';
     $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
@@ -317,6 +322,7 @@ function islandora_ontologies_object_autocomplete($cmodel,$x2) {
     }
     $list = array();
     foreach ($json['response']['docs'] as $choice) {
+     
       if (isset($choice['fgs_label_mt'])) {
         $list[$choice['PID']] = $choice['fgs_label_mt'][0];
       }
