@@ -292,13 +292,15 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 						{
 					$value_restrictions[]=t('<strong>You can add more of this relations</strong>');
           $value_restrictions[]=t('You have: ').$restrictionson_properties[$subject][$ontology][$property]['currentnum'];	
-           $value_restrictions[]=t('Your Maximum is').$restrictionson_properties[$subject][$ontology][$property]['currentmax'];	
+           $value_restrictions[]=t('Your Maximum is ').$restrictionson_properties[$subject][$ontology][$property]['currentmax'];	
 					$value_restrictions[]=t('<strong>To Objects of type: </strong>').$restrictionson_properties[$subject][$ontology][$property]['onClass'];
 					
             }
 					else
 						{
-						$value_restrictions[]=t('<strong>You have reached the limit for this relation!</strong>');	
+						$value_restrictions[]=t('<strong>You have reached the limit for this relation!</strong>');
+            $value_restrictions[]=t('You have: ').$restrictionson_properties[$subject][$ontology][$property]['currentnum'];	
+            $value_restrictions[]=t('Your Maximum is ').$restrictionson_properties[$subject][$ontology][$property]['currentmax'];	
 						}
 					
 					if ($restrictionson_properties[$subject][$ontology][$property]['inverse'])
@@ -344,7 +346,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
  
 				$rel_ns = $possible_relations[$subjectCMODEL]['posiblerels_complete'][$ontology][$property]['ns'];
 				$rel_name =  $possible_relations[$subjectCMODEL]['posiblerels_complete'][$ontology][$property]['proplocal'];
-	            if (isset($possible_relations[$subjectCMODEL]['posiblerels_complete'][$ontology][$property]['inverse']))//we also have an inverse. Just add, that´s the reason they are defined!
+	      if (isset($possible_relations[$subjectCMODEL]['posiblerels_complete'][$ontology][$property]['inverse']))//we also have an inverse. Just add, that´s the reason they are defined!
 					{
 					if (is_array($possible_relations[$subjectCMODEL]['posiblerels_complete'][$ontology][$property]['inverse'])>0)	
 						{

@@ -57,6 +57,111 @@ function islandora_ontologies_get_delete_path($objectPid, $namespace, $relations
 
   return 'islandora/object/' . $objectPid . '/manage/relationships/delete/' . $namespace . '/' . $relationship . '/' . $targetPid;
 }
+
+/**
+* This function will return all CMODELS, classes, in an ontology
+*
+* If there are ontologie objects associated it returns the ontologie objects
+*
+* @param AbstractObject $islandora_object
+*   The object to check for it´s content models and associated ontology objects.
+* @return Array $associated_ontologies
+* An array with the Ontology Object PIDS
+*/
+function islandora_ontologies_get_clasesin_ontologies(AbstractObject $ontology_object)
+{
+
+	$PID=$ontology_object->id;
+	
+	$fedora_url = variable_get('islandora_base_url', 'http://localhost:8080/fedora');
+	$xmlfilelink = $fedora_url."/objects/".$PID."/datastreams/ONTOLOGY/content";
+	$graph = new Graphite();
+	$graph->load($xmlfilelink);
+	$existing_classes=array();
+	
+	foreach($graph->allOfType('owl:Class') as $resource_list)
+	{
+		$parts = ARC2::splitURI($resource_list->uri);//We need don´t need in our keys the info:fedora part, but we must check if it´s there
+		if ($parts[0]!='info:fedora/')
+			{
+			continue;	
+			}
+		$existing_classes[$parts[1]]=$resource_list->uri;
+		//@TODO check if ontology is correct before adding associate option? This would be almost a reasoner. Not sure if neccesary.
+		
+	}
+  return $existing_classes;
+
+}
+
+
+/**
+ * Get data about objects associated with this pid through any rels-ext.
+ *
+ * @TODO: Add exclusive option - only return objects whose only relation
+ * is to this object.
+ *
+ * @param int $pid
+ *   The parent object's pid.
+ *
+ * @param int $page_number
+ *   Used to calculate offset
+ *
+ * @param int $page_size
+ *   If > 0, limit count of results to this number
+ *
+ * @return array
+ *   An array containing pids of child objects
+ */
+function islandora_ontologies_relatedto_objects($pid, $page_number = 0, $page_size = 0) {
+  $connection = islandora_get_tuque_connection();
+  $query = <<<EOQ
+SELECT ?object ?predicate
+FROM <#ri>
+WHERE {
+  ?object <fedora-model:label> ?title ;
+  ?predicate <info:fedora/{$pid}> .
+  !optionals
+  !filters
+}
+
+EOQ;
+  //XACML permissions
+  $collection_predicate_filters="";
+  $query_optionals = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_optionals', 'manage');
+  $query_filters = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_filters');
+  //Exclude collection predicates here
+  $collection_predicate_filters = " !sameTerm(?predicate, <fedora-rels-ext:isMemberOfCollection>) && !sameTerm(?predicate, <fedora-rels-ext:isMemberOf>)";
+  $query_filters[] = $collection_predicate_filters;
+  $filter_map = function ($filter) {
+    return "FILTER($filter)";
+  };
+ 
+ 
+  $query = format_string($query, array(
+    '!optionals' => !empty($query_optionals) ? ('OPTIONAL {{' . implode('} UNION {', $query_optionals) . '}}') : '',
+    '!filters' => implode(' ', array_map($filter_map, $query_filters)),
+  ));
+  
+ 
+  // Include paging parameters if provided.
+  if ($page_number > 0 && $page_size > 0) {
+    // Add in the offset.
+    $offset = $page_number * $page_size;
+    $query .= " offset $offset";
+  }
+  if ($page_size > 0) {
+    // Add in the limit.
+    $query .= " limit $page_size";
+  }
+ 
+  $queryresults = $connection->repository->ri->sparqlQuery($query);
+
+  return $queryresults;
+}
+
+
+
 /**
 * This function will read the content models of an Objects and searches if this contentmodels are associated to an Ontology Object
 *
@@ -166,15 +271,15 @@ function islandora_ontologies_get_current_localrelations($subject_pid)
 		drupal_not_found();
 		exit;
 	}
-	$not_system_rels= function($rel) 
-	{
-		//Filter out info:fedora/fedora-system:def/model
-		if (strpos($rel['predicate']['namespace'], 'info:fedora/fedora-system:def/')===FALSE)
-			{
-			return TRUE;
-			}	
-			else
-			{return FALSE;}	
+	$not_system_rels= function($rel) {
+    //Filter out info:fedora/fedora-system:def/model and xacml/other islandora ones
+    if ( strpos($rel['predicate']['namespace'], 'info:fedora/fedora-system:def/')===FALSE && strpos($rel['predicate']['namespace'],'http://islandora.ca/ontology/relsext#')===FALSE) {
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+      
 	};
 	
 	$rels = $subject->relationships->get();
@@ -363,12 +468,13 @@ function islandora_ontologies_filter_existing_relations($subject, array $subject
 * Optional: if onClass and/or onProperty is given, it limits it return values to this matches
 * @param $ontology_objectpid. The pid of the object that contains the Ontology 
 * @param $subject. The Class that is being restricted (ContentmodelPID) with or without the info:fedora/ part
-* @param $rels. Current Relations array for this object. We already discarded those properties who are not defined in this ontology. If empty should be of type array
+* @param $rels. Current Relations array for this object. Accept Only those properties who are not defined in this ontology. 
+* you can use islandora_ontologies_filter_existing_relations($subject,$ontologies,$currentrelations) to filter an existing set;If empty should be of type array
 * @param $onClass. only those restrictions that apply to a givenClass (otherContentmodelPID) with or without the info:fedora/ part. Default Null
 * @param $onProperty. only those restrictions for a specific property. Full with ns.
 * @return $restrictionsOnproperties with the properties,onClass and cardinality/existence restrictions and some human readable messages
 */
-function islandora_ontologies_get_restricted_properties($ontology_objectpid,$subject,$rels,$onClass = NULL,$onProperty = NULL)
+function islandora_ontologies_get_restricted_properties($ontology_objectpid,$subject,array $rels,$onClass = NULL,$onProperty = NULL)
 {
 	$module_path = drupal_get_path('module', 'islandora_ontologies');
 	include_once($module_path.'/arc2/ARC2.php');
@@ -441,7 +547,18 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
       }
     }
 	);
-		
+	$cardinalitydoesnotallowmore = $rb->create(
+    $rb->logicalNot($cardinalityallowsmore),
+      function() use ($context,&$restrictionsOnproperties) {
+        $restrictionsOnproperties[$context['OnProperty']]['allowsmore']=FALSE;
+         $restrictionsOnproperties[$context['OnProperty']]['currentnum']=$context['matchedNumRels'];
+         $restrictionsOnproperties[$context['OnProperty']]['currentmax']=$context['maxNumRel'];
+       }
+  );
+  
+  
+  
+  	
 	$cardinalitynotmet=$rb->create(
 				$rb->logicalNot($cardinality),
 					function() use ($context,&$restrictionsOnproperties) {
@@ -516,19 +633,8 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 	
 	//construction blocks end
 	
+	$localcontext=array();//max and min local accumulator.
 	
-	//April 2015
-  //There is something odd on how protege writes restrictions. max and min are split inside separate subclassof ->Restriction for the same onProperty. Assuming Protege will do the same for other types of
-  //Combined restrictions
-  //This may make sense for a human, but means i got to accumulated restrictions first before passing them trough our rules.
-  //My solution. 
-  /*
-			if (!$property->get("-owl:onProperty")->get("-rdfs:subClassOf")->isNull())
-			{
-			foreach($property->all("-owl:onProperty") as $prop)//Could be multiple, if the same property is used across mult. class restrictions. Fixes previous false asumption!
-				{
-  
-  */
   
   
   
@@ -544,8 +650,7 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 				$context['inverse']=NULL;
 				$context['inverseof']=NULL;
         //reset this limits so we don't get stuck on them on every foreach
-        unset($context['minNumRel']);
-        unset($context['maxNumRel']);  
+
 					//It's a local restriction 
 					//First check if there is an owl:onProperty and the property is defined in this document
 					if (($thing->has("owl:onProperty")) && ($thing->get("owl:onProperty")->has('rdf:type')))
@@ -559,7 +664,12 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 						{
 							$context['OnProperty'] = $onProperty == $thing->get("owl:onProperty")->uri ? $thing->get("owl:onProperty")->uri : NULL; //Only null if the property does not exist.
 						}
-						
+          	//April 2015
+            //There is something odd on how protege writes restrictions. max and min are split inside separate subclassof ->Restriction for the same onProperty. Assuming Protege will do the same for other types of
+            //Combined restrictions. That means that i can't assume that i will get all, maximums and minimums by evaluating only one restricted property N. We will deal with this by creating
+            //a context based on a function. Love rulebuilder. 
+            if (!isset($localcontext[$context['OnProperty']])){$localcontext[$context['OnProperty']]=array();}
+            
 						
 						//Also get inverse and inversof
 						$property=$thing->get("owl:onProperty");
@@ -580,7 +690,7 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 									}	
 									//Now we check if there is a onClass definition and the class is also defined in this document		
 									//Now Look if there are cardinality and existance restricctions and infere some simple rules
-									//In OWL Lite Cardinality can only be 0 or 1, we could add also owl2 owl:qualifiedCardinality for compatibility if ontology was generated using i.e Protege
+									//In OWL Lite Cardinality can only be 0 or 1, owl 2 allows more int. for owl:qualifiedCardinality, added for compatibility if ontology was generated using i.e Protege
 						if ( ($thing->has("owl:cardinality")) || ($thing->has("owl:qualifiedCardinality")) )
 						{
 							if ($thing->has("owl:cardinality"))
@@ -588,16 +698,16 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 							
 							if ((int)$thing->getLiteral("owl:cardinality")==0)
 							{
-								$context['minNumRel']=0;
-								$context['maxNumRel']=$context['minNumRel'];
+								$localcontext[$context['OnProperty']]['minNumRel']=0;
+                $localcontext[$context['OnProperty']]['maxNumRel']=$localcontext[$context['OnProperty']]['minNumRel'];
 								$ruleset_currentrelations_compliant->addRule($cardinality);
 								$ruleset_currentrelations_compliant->addRule($cardinalitynotmet);
 							
 							}
 							elseif ((int)$thing->getLiteral("owl:cardinality")==1)
 							{
-								$context['minNumRel']=1;
-								$context['maxNumRel']=1;
+								$localcontext[$context['OnProperty']]['minNumRel']=1;
+								$localcontext[$context['OnProperty']]['maxNumRel']=$localcontext[$context['OnProperty']]['minNumRel'];
 								$ruleset_currentrelations_compliant->addRule($cardinality);
 								$ruleset_currentrelations_compliant->addRule($cardinalitynotmet);
 							
@@ -613,23 +723,23 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 							{
 								if ((int)$thing->getLiteral("owl:qualifiedCardinality")==0)
 								{
-									$context['minNumRel']=0;
-									$context['maxNumRel']=$context['minNumRel'];
+  								$localcontext[$context['OnProperty']]['minNumRel']=0;
+                  $localcontext[$context['OnProperty']]['maxNumRel']=$localcontext[$context['OnProperty']]['minNumRel'];
 									$ruleset_currentrelations_compliant->addRule($cardinality);
 									$ruleset_currentrelations_compliant->addRule($cardinalitynotmet);
 							
 								}
-								elseif ((int)$thing->getLiteral("owl:qualifiedCardinality")==1)
+								elseif (ctype_digit((string) $thing->getLiteral("owl:qualifiedCardinality"))) //Now OWL 2 Compliant
 								{
-									$context['minNumRel']=1;
-									$context['maxNumRel']=1;
+  								$localcontext[$context['OnProperty']]['minNumRel']=$thing->getLiteral("owl:qualifiedCardinality");
+                  $localcontext[$context['OnProperty']]['maxNumRel']=$localcontext[$context['OnProperty']]['minNumRel'];
 									$ruleset_currentrelations_compliant->addRule($cardinality);
 									$ruleset_currentrelations_compliant->addRule($cardinalitynotmet);
 							
 								}
 								else
 								{
-									//"OWL LITE only allows 0 or 1 as values for owl:maxCardinality";
+									//"OWL LITE only allows 0 or 1 as values for owl:maxCardinality, owl2 has more options.;
 									$ruleset_currentrelations_compliant->addRule($cardinalitynotset);
 									continue;	
 								}
@@ -637,36 +747,33 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 						}
 						else
 						{
-							
-							if (($thing->has("owl:minCardinality")) || ($thing->has("owl:minQualifiedCardinality")))
-								{
+						if (($thing->has("owl:minCardinality")) || ($thing->has("owl:minQualifiedCardinality"))) {
 							//Only if there is no cardinality we fetch max first and the min					
 							if (($thing->has("owl:minCardinality")) && ((int)$thing->getLiteral("owl:minCardinality")<=1))
 							{					
 								
-								$context['minNumRel']=(int)$thing->getLiteral("owl:minCardinality");
+								$localcontext[$context['OnProperty']]['minNumRel']=(int)$thing->getLiteral("owl:minCardinality");
 							
 							}
-							elseif (($thing->has("owl:minQualifiedCardinality")) && ((int)$thing->getLiteral("owl:minQualifiedCardinality")<=1))
+							elseif (($thing->has("owl:minQualifiedCardinality")) && (ctype_digit((string) $thing->getLiteral("owl:minQualifiedCardinality")))) //Now OWL 2 compliant, can be any 0 or any positive integer
 							{					
 								
-								$context['minNumRel']=(int)$thing->getLiteral("owl:minQualifiedCardinality");
+								$localcontext[$context['OnProperty']]['minNumRel']=(int)$thing->getLiteral("owl:minQualifiedCardinality");
 							
 							}
 							
-							}
-							if (($thing->has("owl:maxCardinality")) || ($thing->has("owl:maxQualifiedCardinality")))
-								{
+						}
+						if (($thing->has("owl:maxCardinality")) || ($thing->has("owl:maxQualifiedCardinality"))) {
 							if (($thing->has("owl:maxCardinality")) && ((int)$thing->getLiteral("owl:maxCardinality")<=1))
 							{
-								$context['minNumRel']=isset($context['minNumRel'])?$context['minNumRel']:0;//If min not set assume it´s 0
-								$context['maxNumRel']=(int)$thing->getLiteral("owl:maxCardinality");
+								$localcontext[$context['OnProperty']]['minNumRel']=isset($localcontext[$context['OnProperty']]['minNumRel'])?$localcontext[$context['OnProperty']]['minNumRel']:0;//If min not set assume it´s 0
+								$localcontext[$context['OnProperty']]['maxNumRel']=(int)$thing->getLiteral("owl:maxCardinality");
 								
 							}
-							elseif (($thing->has("owl:maxQualifiedCardinality")) && ((int)$thing->getLiteral("owl:maxQualifiedCardinality")<=1))
+							elseif (($thing->has("owl:maxQualifiedCardinality")) && (ctype_digit((string) $thing->getLiteral("owl:maxQualifiedCardinality"))))//Now OWL 2 compliant, can be any 0 or any positive integer
 								{
-									$context['minNumRel']=isset($context['minNumRel'])?$context['minNumRel']:0;//If min not set assume it´s 0
-									$context['maxNumRel']=(int)$thing->getLiteral("owl:maxQualifiedCardinality");
+									$localcontext[$context['OnProperty']]['minNumRel']=isset($localcontext[$context['OnProperty']]['minNumRel'])?$localcontext[$context['OnProperty']]['minNumRel']:0;//If min not set assume it´s 0
+									$localcontext[$context['OnProperty']]['maxNumRel']=(int)$thing->getLiteral("owl:maxQualifiedCardinality");
 								
 								}
 							}
@@ -809,8 +916,13 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 							//$propertymetsClass->execute($context);
 							//$allvaluesFrom->execute($context);
 							//$somevaluesFrom->execute($context);	
+              $context['minNumRel']=function() use ($context,$localcontext){return isset($localcontext[$context['OnProperty']]['minNumRel']) ? $localcontext[$context['OnProperty']]['minNumRel'] : NULL ; };
+              $context['maxNumRel']=function() use ($context,$localcontext){return isset($localcontext[$context['OnProperty']]['maxNumRel']) ? $localcontext[$context['OnProperty']]['maxNumRel'] : NULL ; };  
+ 
+              
 							$ruleset_currentrelations_compliant->addRule($cardinalityallowsmore);//check if with the given relations we can add something more...
-							$ruleset_currentrelations_compliant->executeRules($context);
+						  $ruleset_currentrelations_compliant->addRule($cardinalitydoesnotallowmore);
+              $ruleset_currentrelations_compliant->executeRules($context);
 							
 					
 					
@@ -1241,7 +1353,6 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 								{
 									$context['minNumRel']=isset($context['minNumRel'])?$context['minNumRel']:0;//If min not set assume it´s 0
 									$context['maxNumRel']=(int)$thing->getLiteral("owl:maxQualifiedCardinality");
-								
 								}
 							}
 							$ruleset_currentrelations_compliant->addRule($cardinality);
