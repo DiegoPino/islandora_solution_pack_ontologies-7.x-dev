@@ -14,6 +14,7 @@ include_once($module_path.'/Graphite/Graphite.php');
 
 function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$form_state, $islandora_object_pid){
 	module_load_include('inc', 'islandora', 'includes/utilities');
+  module_load_include('inc', 'islandora_ontologies', 'includes/utilities');
 	
 	
 	
@@ -60,7 +61,8 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 		
 		if ($contentmodel_object)
 		{   
-			$label = $contentmodel_object['label'];
+			dpm(islandora_ontologies_get_restricted_properties($PID,$contentmodelpid,array(),NULL,NULL));
+      $label = $contentmodel_object['label'];
 			
 			$rels = $contentmodel_object->relationships->get(ISLANDORA_RELS_EXT_URI,'hasLocalOntology',$PID,RELS_TYPE_URI);//We get a haslocalOntology relation for this ontologyPID
 			//print_r($rels);
@@ -73,9 +75,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 				'title' => array(
 					'#markup' => l(t('@label (@pid)', array('@label' => $label, '@pid' => $contentmodelpid)), "islandora/object/{$contentmodelpid}"),
 				),
-				'allowed_relations' => array(
-				        '#markup' => t(''),
-					),	
+				
 			);
 		}
 		
@@ -94,7 +94,7 @@ function islandora_ontologies_parsed_vocabulary_view_form(array $form, array &$f
 	$form['table'] = array(
 			'#tree' => TRUE,
 			'#header' => array(
-				array('class' => array('select-all')), t('PID'), 'Namespace',
+				array('class' => array('select-all')), t('PID')
 			),
 			'#theme' => 'islandora_ontologies_ontology_management_table',
 			'rows' => $rows,
@@ -139,9 +139,10 @@ function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, ar
 		if ($subject) 
 		{  
 			
-	
+      //We should check if we have the paths in cache, if so get rid of them:
+      
 			//@TODO allow multiple haslocalOntology relations on tha same contentmodel to different ontology objects.
-		    //This means we must check if ontologies does not have the same internal predicate_uri, if so this could lead to erroneous interpretation of applied relations between objects.	
+		   //This means we must check if ontologies does not have the same internal predicate_uri, if so this could lead to erroneous interpretation of applied relations between objects.	
 			switch($properties['selected'])
 				{
 				case 1:	
@@ -155,6 +156,9 @@ function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, ar
 					}
 				break;
 				default:
+        if ($cache = cache_get('islandora_ontologies_adjacency'.$pid)) {
+            cache_clear_all('islandora_ontologies_adjacency'.$pid,'cache');
+        } 
 				$subject->relationships->remove(ISLANDORA_RELS_EXT_URI, 'hasLocalOntology', $ontologyobject_pid, RELS_TYPE_URI);		
 			 	drupal_set_message(t('Ontology Class association for Object @ontologyobject_pid from Content Model @label removed', array('@ontologyobject_pid'=>$ontologyobject_pid,'@label' => $subject['label'])));	
 				}
