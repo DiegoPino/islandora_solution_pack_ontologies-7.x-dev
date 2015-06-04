@@ -239,7 +239,7 @@ function islandora_ontologies_islandora_xml_form_builder_forms() {
 }
 
 
-function islandora_ontologies_islandora_content_model_forms_form_associations() {
+function islandora_ontologies_islandora_xml_form_builder_form_associations() {
   return array(
     'islandora_ontologies_dc' => array(
       'content_model' => 'ontologies:ontologyCModel',
