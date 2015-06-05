@@ -131,7 +131,7 @@ EOQ;
   $query_optionals = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_optionals', 'manage');
   $query_filters = (array) module_invoke('islandora_xacml_api', 'islandora_basic_collection_get_query_filters');
   //Exclude collection predicates here
-  $collection_predicate_filters = " !sameTerm(?predicate, <fedora-rels-ext:isMemberOfCollection>) && !sameTerm(?predicate, <fedora-rels-ext:isMemberOf>)";
+  $collection_predicate_filters = " !sameTerm(?predicate, <fedora-rels-ext:isMemberOfCollection>) && !sameTerm(?predicate, <fedora-rels-ext:isMemberOf>) && !sameTerm(?predicate, <fedora-model:hasModel>)";
   $query_filters[] = $collection_predicate_filters;
   $filter_map = function ($filter) {
     return "FILTER($filter)";
