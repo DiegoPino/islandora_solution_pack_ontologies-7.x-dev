@@ -295,7 +295,7 @@ function islandora_ontologies_object_autocomplete($cmodel,$x2) {
  
     
   //We will also have to check if the URL is external, because of Solr Cloud
- 
+  $solr_cloud_prefix=variable_get('islandora_solrcloud_setting_uniqueid_prefix','*');
   
 
 	$json=array();
@@ -310,6 +310,7 @@ function islandora_ontologies_object_autocomplete($cmodel,$x2) {
       'fl' => array('fgs_label_mt', 'PID', 'PID_fullurl'),
     );
     $query = "($qualifier) AND " . 'RELS_EXT_hasModel_uri_mt:"' . $cmodel . '"';
+    $query .= " AND PID_fullurl:([$solr_cloud_prefix TO *])";
     $url = parse_url(variable_get('islandora_solr_url', 'localhost:8080/solr'));
     $solr = new Apache_Solr_Service($url['host'], $url['port'], $url['path'] . '/');
     $solr->setCreateDocuments(FALSE);
