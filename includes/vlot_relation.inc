@@ -88,7 +88,7 @@ function islandora_ontologies_vlot_relationships_form(array $form, array &$form_
       
       foreach($result as $ontologie_paths) {
         foreach($ontologie_paths as $individual_path) {
-          $cmodel_nodes_keys = array_keys($individual_path); //get the keys, our graphs are acyclic, so we won't loose any state
+          $cmodel_nodes_keys = array_keys($individual_path); //get the keys, our graphs are handled as acyclic, so we won't loose any state
          
           foreach($individual_path as $cmodel_node=>$cmodel_node_relation)
           {

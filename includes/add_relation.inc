@@ -308,9 +308,9 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 							
 						$value_restrictions[]=t('<strong>This relation implements an inverse one: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverse']['localname'];	
 						}
-					if ($restrictionson_properties[$subject][$ontology][$property]['inversof'])
+					if ($restrictionson_properties[$subject][$ontology][$property]['inverseof'])
 						{
-						$value_restrictions[]=t('<strong>This relation is the inverse of: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inversof'].t('<p>If you wan´t both relations to be added, then you must do this from the target Object</p>');	
+						$value_restrictions[]=t('<strong>This relation is the inverse of: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverseof'].t('<p>If you wan´t both relations to be added, then you must do this from the target Object</p>');	
 						}	
 	 			    
 				}

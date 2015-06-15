@@ -342,7 +342,7 @@ function islandora_ontologies_get_possible_localrelations($subject,$subject_asso
 				//We won´t deal with the nature of the restriction here. We just wan´t a list of possible/defined/restricted properties for this particular class
 				$inverse=$property->get('-owl:inverseOf')->isNull() ? '' : $property->get('-owl:inverseOf')->uri;
 				$inverseof=$property->get('owl:inverseOf')->isNull() ? '' : $property->get('owl:inverseOf')->uri;
-				//we must deal with inverse and inversof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
+				//we must deal with inverse and inverseof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
 				//But when we have just an inverse, it means we can give our object part from the tripple this propery without question. assuming the ontology is well (logical)formed. 
 				$uri_parts = ARC2::splitURI($property->uri);
 				if (!empty($inverse))
@@ -519,7 +519,7 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 					'msg'=> array('Cardinality on '.$context['OnProperty'].' complaint with ontology'),
 					'onClass'=>$context['OnClass'],
 					'inverse'=>$context['inverse'],
-					'inversof'=>$context['inverseof'],
+					'inverseof'=>$context['inverseof'],
 				);
 			
 	    }
@@ -567,7 +567,7 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
 								'msg'=> array('Cardinality on '.$context['OnProperty'].' not complaint with ontology'),
 								'onClass'=>$context['OnClass'],
 								'inverse'=>$context['inverse'],
-								'inversof'=>$context['inverseof'],
+								'inverseof'=>$context['inverseof'],
 							);
 						
 					} 
@@ -671,13 +671,13 @@ function islandora_ontologies_get_restricted_properties($ontology_objectpid,$sub
             if (!isset($localcontext[$context['OnProperty']])){$localcontext[$context['OnProperty']]=array();}
             
 						
-						//Also get inverse and inversof
+						//Also get inverse and inverseof
 						$property=$thing->get("owl:onProperty");
 						
 						
 							$inverse=$property->get('-owl:inverseOf')->isNull() ? '' : $property->get('-owl:inverseOf')->uri;
 							$inverseof=$property->get('owl:inverseOf')->isNull() ? '' : $property->get('owl:inverseOf')->uri;
-							//we must deal with inverse and inversof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
+							//we must deal with inverse and inverseof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
 							//But when we have just an inverse, it means we can give our object part from the tripple this propery without question. assuming the ontology is well (logical)formed. 
 							
 							if (!empty($inverse))
@@ -1012,8 +1012,10 @@ function islandora_ontologies_get_all_for_cmodel($contentmodelpid)
 * This function traverses the OWL graph in search for paths between objects belonging to classes and builds and adjacency list. 
 * Fedoras implementation/Mulgara does not allow arbritrary paths to be traversed(al leats not optimal), so we must know how to get from point 1(object) to any other object->of class in an ontology to ask for a 
 * local graph. Even more, be can cache the returning structure and only update the cache in the rare case the attached ontologies are updated.		
+* Update : we also store now the "direction" of the properties. We will set 1 for normal properties, 0 for inverse ones. This allows us further process everything by checking how many times we
+*  go from one to many and one to one, to filter by level of strong connection of our graph/diverging interpretations on traversal...    
 * @param $subject any contentmodel pid
-* @return adjacency list of neightborns and their relations	
+* @return adjacency list of neightborns and their relations plus the direction/nature of the property, if it's a versed one or an inverse.
 * @todo make this a class				
 */	
 function islandora_ontologies_get_graph_path($subject)
@@ -1034,8 +1036,8 @@ $graph = array(
 		$adjacency = array();
 		$adjacencyparsed = array();
 		$adjacencyfull = array();
-     
-		
+    $verse_prop = 1; //If the property is a normal one 
+		$inverse_prop = 0; //If it's the inverse of a normal one.
 		try {
 			$contentmodel_object =islandora_object_load($subject);
 			}
@@ -1048,70 +1050,63 @@ $graph = array(
 			$tmgraph=islandora_ontologies_get_all_for_cmodel($subject);
 			if(count($tmgraph)>0)
 				{
-				foreach ($tmgraph as $ontology => $relations)
-					{	
+				foreach ($tmgraph as $ontology => $relations) {
 					$adjacency[$ontology]=islandora_ontologies_get_all_restricted_properties($ontology);
 					//Now we have an array with every $ontology as key and classes and their relations
-					//Lets clean this up. We can make different types of adjacency list. 
-					//1.-One with classes as values and keys 
-					//2. and one with properties as keys and values.
-					//3.- some mixup from 1. and 2.
-					//dpm($adjacency[$ontology]);
+					//Lets clean this up.
+				
 					
 					$adjacencyparsed=array();
-					foreach ($adjacency[$ontology] as $class=>$props)
-						{
+					foreach ($adjacency[$ontology] as $class=>$props) {
 						$adjacencyparsed[$class]=array();	
-						if (count($props[0]>0))
-							{
-							foreach($props[0] as $propname=>$propinfo)
-								{
-								if ((array_key_exists('onClass',$propinfo)) && (!empty($propinfo['onClass'])))
-									{
-									$adjacencyparsed[$class][$propinfo['onClass']][]=$propname;	
-									$adjacencyparsed[$class][$propinfo['onClass']]=array_unique($adjacencyparsed[$class][$propinfo['onClass']]);
-									}
-								if 	((array_key_exists('inverse',$propinfo)) && (!empty($propinfo['inverse'])))
-									{
-									if (array_key_exists($propinfo['onClass'],$adjacencyparsed))
-										{	
-										$adjacencyparsed[$propinfo['onClass']][$class][]=$propinfo['inverse'];
-										$adjacencyparsed[$propinfo['onClass']][$class]=array_unique($adjacencyparsed[$propinfo['onClass']][$class]);
-										}
-									else
-										{
-										$adjacencyparsed[$propinfo['onClass']]=array($class=>$propinfo['inverse']);	
-										}
-											
-									}
-									if 	((array_key_exists('inverseof',$propinfo)) && (!empty($propinfo['inverseof'])))
-										{
-										if (array_key_exists($propinfo['onClass'],$adjacencyparsed))
-											{	
-											$adjacencyparsed[$propinfo['onClass']][$class][]=$propinfo['inverseof'];
-											$adjacencyparsed[$propinfo['onClass']][$class]=array_unique($adjacencyparsed[$propinfo['onClass']][$class]);
-											}
-										else
-											{
-											$adjacencyparsed[$propinfo['onClass']]=array($class=>$propinfo['inverseof']);	
-											}
-											
-										}	
-								} 
-						
-							}
-						
-						}	
+            if (count($props[0]>0)) {
+              foreach($props[0] as $propname=>$propinfo) {
+               
+                if ((array_key_exists('onClass',$propinfo)) && (!empty($propinfo['onClass']))) {
+                   //Start by assuming that any property is a versed one in case i don't get an inverse or inverseof key for this.
+                  $current_propdirection=$verse_prop;
+                  if ((array_key_exists('inverse',$propinfo)) && (!empty($propinfo['inverse']))) {
+                  //if this property has an "inverseo", then it's an verse  property  
+                  $current_propdirection=$verse_prop;
+                    //Lets try to assing the verse one to the parent class
+                    if (array_key_exists($propinfo['onClass'],$adjacencyparsed)) {
+                      $adjacencyparsed[$propinfo['onClass']][$class][]=array($propinfo['inverse'],$inverse_prop);
+                      $adjacencyparsed[$propinfo['onClass']][$class] = array_map("unserialize", array_unique(array_map("serialize", $adjacencyparsed[$propinfo['onClass']][$class])));
+                      
+                    }
+                    else {
+                      $adjacencyparsed[$propinfo['onClass']] = array($class=>array($propinfo['inverse'],$inverse_prop));	
+                      }
+                  }
+                  if ((array_key_exists('inverseof',$propinfo)) && (!empty($propinfo['inverseof']))) {
+                    
+                    $current_propdirection=$inverse_prop;
+                    if (array_key_exists($propinfo['onClass'],$adjacencyparsed)) {
+                      $adjacencyparsed[$propinfo['onClass']][$class][]=array($propinfo['inverseof'],$verse_prop);
+                      $adjacencyparsed[$propinfo['onClass']][$class] = array_map("unserialize", array_unique(array_map("serialize", $adjacencyparsed[$propinfo['onClass']][$class])));
+                     
+                    }
+                    else {
+                      $adjacencyparsed[$propinfo['onClass']] = array($class=>array($propinfo['inverseof'],$verse_prop));	
+                    }
+                  }
+                  //Now, knowing what type of property this is, verse or inverse, i finally add this to the current class
+                  $adjacencyparsed[$class][$propinfo['onClass']][]=array($propname,$current_propdirection);
+                }
+             
+                //Avoid duplicates
+                $adjacencyparsed[$class][$propinfo['onClass']] = array_map("unserialize", array_unique(array_map("serialize", $adjacencyparsed[$class][$propinfo['onClass']])));
+                
+								  
+              }//end foreach
+            }
+          }//end foreach
 				 $adjacencyfull[$ontology]=$adjacencyparsed;
-					}
-				
-				
-				
 				}
-				
-			}
-			
-			return($adjacencyfull);
+      }
+		}
+		
+		return($adjacencyfull);
 }
 /** Workhorse Function to islandora_ontologies_get_graph_path
 Simililar to islandora_ontologies_get_restricted_properties, but it parses all clases and returns less data for every one. It´s computational intensive but more efficient than calling islandora_ontologies_get_restricted_properties for every class
@@ -1152,7 +1147,7 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 			$restrictionsOnproperties[$context['OnProperty']]=array(
 					'onClass'=>$context['OnClass'],
 					'inverse'=>$context['inverse'],
-					'inversof'=>$context['inverseof'],
+					'inverseof'=>$context['inverseof'],
 				);
 			
 	    }
@@ -1187,7 +1182,7 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 							array(
 								'onClass'=>$context['OnClass'],
 								'inverse'=>$context['inverse'],
-								'inversof'=>$context['inverseof'],
+								'inverseof'=>$context['inverseof'],
 							);
 						
 					} 
@@ -1253,11 +1248,11 @@ function islandora_ontologies_get_all_restricted_properties($ontology_objectpid)
 							
 						$context['OnProperty']=$thing->get("owl:onProperty")->uri;
 						
-						//Also get inverse and inversof
+						//Also get inverse and inverseof
 						$property=$thing->get("owl:onProperty");												
 						$inverse=$property->get('-owl:inverseOf')->isNull() ? '' : $property->get('-owl:inverseOf')->uri;
 						$inverseof=$property->get('owl:inverseOf')->isNull() ? '' : $property->get('owl:inverseOf')->uri;
-						//we must deal with inverse and inversof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
+						//we must deal with inverse and inverseof differently. If this property has an inverseof then, when the validation is made, we must invert subject/object
 						//But when we have just an inverse, it means we can give our object part from the tripple this propery without question. assuming the ontology is well (logical)formed. 
 						if (!empty($inverse))
 								{
@@ -1637,7 +1632,7 @@ class islandora_ontologies_LCS {
   }
   /**
   * This method takes two paths and searches for a common subpath(subquence). It also stores where this common subpath starts in every path. 
-  * This is not really needed because every path is defined as a Directed Acyclic graph, so nodes(CMODELS) should never repeat.
+  * This is not really used, but handy to have in future, because in our current implementation every path is calculed as a Directed Acyclic graph (DAG), so nodes(CMODELS) should never repeat.
   */
   public function computeLCS() {
     $m = count($pathA);
