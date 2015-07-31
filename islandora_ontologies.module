@@ -4,6 +4,9 @@
  * @file
  * Ontology Solution Pack, Based on Islandora_relationship_editor 
  */
+
+// Includes functions to create Ontologies blocks.
+require_once dirname(__FILE__) . '/includes/blocks.inc';
 /** 
  * Implements hook_menu().
  */
@@ -73,6 +76,13 @@ function islandora_ontologies_menu() {
     'page callback' => 'islandora_content_model_autocomplete',
     'page arguments' => array(2),
     'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
+    'type' => MENU_CALLBACK,
+  );
+  $items['islandora/relationships/facetfilter/%/%'] = array(
+    'page callback' => 'islandora_ontologies_ajax_facetfilter_callback',
+    'file' => 'includes/callbacks.inc',
+    'page arguments' => array(3,4),
+    'access arguments' => array('search islandora solr'),
     'type' => MENU_CALLBACK,
   );
   
@@ -162,8 +172,8 @@ function islandora_ontologies_theme() {
     ),
     'islandora_ontologies_block' => array(
     'variables' => array('islandora_object' => NULL),
-	'template' => 'theme/related-objects-block',
-      	'file' => 'theme/related-objects-block.theme.inc',
+    'template' => 'theme/related-objects-block',
+    'file' => 'theme/related-objects-block.theme.inc',
     ),
     'islandora_ontologies_parsed' => array(
         'variables' => array('islandora_object' => NULL),
@@ -365,7 +375,7 @@ function  islandora_ontologies_library() {
 		  
 			  $libraries['islandora_ontologies_vlot'] = array(
 			  		    'title' => 'islandora ontologies vlot',
-			  		    'version' => 3.11, //Matched vis version March 2015
+			  		    'version' => 4.6, //Matched vis version July 2015. Api deprecation!!
 					      'css' => array(
 					     
                   "$path/css/islandora_ontologies_vlot.css" => array(
@@ -397,7 +407,7 @@ function  islandora_ontologies_library() {
 			  		  ); 
       			  $libraries['islandora_ontologies_manage_vlot'] = array(
       			  		    'title' => 'islandora ontologies manage vlot',
-      			  		    'version' => 3.11,
+      			  		    'version' => 4.6,
       					      'css' => array(
 					     
                         "$path/css/islandora_ontologies_vlot.css" => array(

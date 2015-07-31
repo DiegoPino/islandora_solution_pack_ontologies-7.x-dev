@@ -1491,7 +1491,7 @@ class islandora_ontologies_adjacency_graph {
 	      if (!empty($this->graph[$t])) {
 	        // for each adjacent neighbor
 	        foreach ($this->graph[$t] as $vertex=>$props) {
-				dpm($vertex);
+				//dpm($vertex);
 	          if (!$this->visited[$vertex]) {
 	            // if not yet visited, enqueue vertex and mark
 	            // as visited
@@ -1583,7 +1583,7 @@ class islandora_ontologies_LCS {
   private $paths_array;
   /**
   * @param $paths is an associative array containing a list of arrays with CMODELS and outgoing predicates sequences for a particular ontology: 
-  * Each numeric key holds an array with a calculated path. Note that the last CMODEL, associative key, does not has an empty array. This is the last node 
+  * Each numeric key holds an array with a calculated path. Note that the last CMODEL, associative key, does has an empty array. This is the last node 
   * of a path and has no outgoing relations. This structure is identical to the return value of class islandora_ontologies_adjacency_graph, method getdepthFirst($vertex).
   * Example
   * array( 
@@ -1632,7 +1632,7 @@ class islandora_ontologies_LCS {
   }
   /**
   * This method takes two paths and searches for a common subpath(subquence). It also stores where this common subpath starts in every path. 
-  * This is not really used, but handy to have in future, because in our current implementation every path is calculed as a Directed Acyclic graph (DAG), so nodes(CMODELS) should never repeat.
+  * This is not really used, but handy to have in future, because in our current implementation every path is calculed as a Directed Acyclic graph (DAG), so nodes(CMODELS) "should" never repeat.
   */
   public function computeLCS() {
     $m = count($pathA);

@@ -110,7 +110,92 @@ function islandora_ontologies_get_content_models($ignore_system_namespace = TRUE
   }
   return $content_models;
 }
+/**
+* Filters current displayed objects in relations graph by facet filters
+*
+* @see islandora_ontologies_block_view()
+*
+* @param $js, string, if called via ajax or not
+* @param $filters, fields to filter current query
+*
+* @return json
+*/
+function islandora_ontologies_ajax_facetfilter_callback($js,$filters) {
+  module_load_include('inc', 'islandora_ontologies', 'includes/blocks');
+  if (!isset($_SESSION['islandora_ontologies_facet_filters'])) {
+    return ; //means no other function initialized the basic query 
+   
+  }
+  else
+  {
+    if (isset($_SESSION['islandora_ontologies_facet_filters']['f']) && in_array((string)$filters, $_SESSION['islandora_ontologies_facet_filters']['f'], true)) {
+      return; //Filter was already in session, no need to re-filter
+    }
+    else
+    {
+      $_SESSION['islandora_ontologies_facet_filters']['f'][]=$filters;
+    }
+  }
+   //Now filter our set:
+  $islandora_ontologies_solr_queryclass = new IslandoraSolrQueryProcessor();
+  $query = "*:*";
+  $solr_cloud_prefix=variable_get('islandora_solrcloud_setting_uniqueid_prefix','');
+  function addcloudprefix($pid,$prefix)
+  {
+      return("\"".$prefix.$pid."\"");
+  }
+  $params=array();
+  $params['f']=$_SESSION['islandora_ontologies_facet_filters']['f'];
+  $islandora_ontologies_solr_queryclass->buildQuery($query, $params);
+  $islandora_ontologies_solr_queryclass->solrParams['fq'][]=$_SESSION['islandora_ontologies_facet_filters']['fq'];
+  $islandora_ontologies_solr_queryclass->solrParams['hl'] = 'false';
+  $islandora_ontologies_solr_queryclass->solrLimit=$_SESSION['islandora_ontologies_facet_filters']['numFound'];
+  $islandora_ontologies_solr_queryclass->executeQuery(TRUE,TRUE);
 
+  $vlotnodes = array();
+  if (count($islandora_ontologies_solr_queryclass->islandoraSolrResult['response']['objects'])>0)
+    {
+      foreach($islandora_ontologies_solr_queryclass->islandoraSolrResult['response']['objects'] as $solr_objects) {
+      $vlotnodes[]=$solr_objects['PID'];
+      }
+      
+    }
+ 
+  
+  
+  
+
+   
+   if ($js == 'ajax') {
+     $commands = array();
+     //Look Kids, i'm going to unbind previous set behaviours by Islandora Solr.
+     $javascript = drupal_add_js();
+     foreach ($javascript['settings']['data'] as $key => $item) {
+         if (isset($item['islandoraSolrRangeSlider']))
+           {
+             foreach($item['islandoraSolrRangeSlider'] as $slider) {
+               $commands[] = ajax_command_invoke('#date-range-slider-canvas-'.$slider['form_key'], 'unbind'); 
+             }
+           
+           }
+       }
+    
+     $commands[] = ajax_command_invoke(NULL, 'islandoraOntologiesVlotfaceting', array($vlotnodes));
+     if (count($islandora_ontologies_solr_queryclass->islandoraSolrResult['response']['objects'])>0)
+     {
+  
+     $commands[] = ajax_command_html('#block-islandora-ontologies-ontologies-solr-facets', islandora_ontologies_block_content($islandora_ontologies_solr_queryclass));
+     }
+     // Menu 'page callback' and #ajax['callback'] functions are supposed to
+     // return render arrays. If returning an Ajax commands array, it must be
+     // encapsulated in a render array structure.
+     ajax_deliver(array('#type' => 'ajax', '#commands' => $commands));
+   }
+   else {
+     // No ajax, just display the time on a page using renderable array.
+   
+   }
+}
 
 
 

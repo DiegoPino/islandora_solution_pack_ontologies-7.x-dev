@@ -11,6 +11,7 @@
 	-moz-border-radius: 5px;
 	border-radius: 5px;
 	padding: 15px;
+	
 	min-width: 250px;
 	min-height: 60px;
 	display: block;
@@ -22,14 +23,14 @@
 
 .islandora-ontologies-vlot-graph {
 	border: 1px solid #ddd;
-	padding: 15px;
+	padding-top: 15px;
 	width: 100%;
 }
 
 div.descriptionContainer {
 	float: left;
 	height: 30px;
-	width: 160px;
+	min-width: 160px;
 	padding-left: 5px;
 	padding-right: 5px;
 	line-height: 30px;
@@ -41,7 +42,7 @@ div.iconContainer {
 
 div.legendElementContainer {
 	display: inline-block;
-	width: 200px;
+	min-width: 200px;
 	height: 30px;
 	border-style: solid;
 	border-width: 1px;
@@ -75,5 +76,5 @@ svg.legendIcon {
 div.externalLegend {
 	position: relative;
 	margin-left: -5px;
-	width: 900px;
+	width: 100%;
 }

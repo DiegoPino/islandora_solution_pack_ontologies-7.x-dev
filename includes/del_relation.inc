@@ -103,7 +103,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
       );
 
     }
-	
+    
 	
   
   
@@ -116,6 +116,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
 			'#theme' => 'islandora_ontologies_ontology_management_table',
 			'rows' =>$rows,
 		);
+  if (count($rows)) {
    $form['operation']=array(
      '#type' => 'select',
      '#title' => t('Operate on'),
@@ -135,7 +136,7 @@ function islandora_ontologies_del_relationships_form(array $form, array &$form_s
  			'#value' => t('Delete relations'),
  		);
     //@TODO we could implement any other type of operations, like move to other target, etc.
-   
+  }
    return $form;
 	}
 
@@ -188,7 +189,7 @@ function islandora_ontologies_del_relationships_form_submit(array $form, array &
    drupal_set_message(format_plural($success_inverse, '@count inverse relation to this object deleted', '@count inverse relations to this object deleted'), 'status');
    if ($failed_inverse>0)
      {
-     drupal_set_message(format_plural($failed_inverse, '@count inverse relation could not be delete because the object as not present', '@count inverse relation could not be delete because the object as not present'), 'status');
+     drupal_set_message(format_plural($failed_inverse, '@count inverse relation could not be delete because the object was not present', '@count inverse relation could not be delete because the object was not present'), 'status');
      }
    $form_state['redirect'] = array("islandora/object/{$islandora_object_pid}/manage/relationships", array('fragment' => 'delete-relations'));
   

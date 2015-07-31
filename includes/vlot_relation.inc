@@ -3,7 +3,7 @@
 function islandora_ontologies_vlot_relationships_form(array $form, array &$form_state, $islandora_object) {
 	module_load_include('inc', 'islandora_ontologies', 'includes/utilities');
 	form_load_include($form_state, 'inc', 'islandora_ontologies', 'includes/vlot_relation');//Needed because we have to ways of calling this form and inside the wrapper 
-   drupal_add_library('islandora_ontologies', 'islandora_ontologies_manage_vlot');
+  drupal_add_library('islandora_ontologies', 'islandora_ontologies_manage_vlot');
   //function islandora_ontologies_manage_relations the link to the embeded and needed functions in this file get`s lost.
 	//islandora_ontologies_get_all_for_cmodel('biodiversity:OccurrenceCModel');
 	
@@ -26,9 +26,12 @@ function islandora_ontologies_vlot_relationships_form(array $form, array &$form_
 		$posible_relastionships=array();
 		$currentrelationsfiltered=array();
 		$options_subjectCmodel=array();
-		$currentontologies= islandora_ontologies_get_associated_ontologies($islandora_object);//@see utilities.inc
-		$currentrelations=islandora_ontologies_get_current_localrelations($islandora_object_pid);//@see utilities.inc
-
+		$currentontologies = islandora_ontologies_get_associated_ontologies($islandora_object);//@see utilities.inc
+		$currentrelations =islandora_ontologies_get_current_localrelations($islandora_object_pid);//@see utilities.inc
+ 
+    
+    
+    
 		foreach($currentontologies as $subject=>$ontologies)
 		{
 	
@@ -83,40 +86,41 @@ function islandora_ontologies_vlot_relationships_form(array $form, array &$form_
       	}	
 
       }
-      $vlot_settings=array();
+      $vlot_settings = array();
       //Now build an vlot vis settings array based on the cmodels, that will serve as containers for this workflow. What we are building here is a container 
       
       foreach($result as $ontologie_paths) {
+      
         foreach($ontologie_paths as $individual_path) {
           $cmodel_nodes_keys = array_keys($individual_path); //get the keys, our graphs are handled as acyclic, so we won't loose any state
-         
           foreach($individual_path as $cmodel_node=>$cmodel_node_relation)
           {
            
             $next_cmodel = next($cmodel_nodes_keys);
             if ($next_cmodel!==false) {
-              $model_label=$cmodel_node;
-              $model_label=preg_match('/^(.*[\/\#])([^\/\#]+)$/', $model_label, $m)? $m[2]: $model_label;
+              $model_label = $cmodel_node;
+              $model_label = preg_match('/^(.*[\/\#])([^\/\#]+)$/', $model_label, $m)? $m[2]: $model_label;
               if (!isset($vlot_settings[$cmodel_node])) {
                  $vlot_settings[$cmodel_node]=array('relates_to'=>array(),'label'=>$model_label,'node_cmodel'=>$model_label,'node_real_cmodel'=>$cmodel_node,'nodetype'=>'placeholder','link'=>url("islandora/object/{$cmodel_node}",array('absolute'=>TRUE)));
               }
-              
-              $relation=$cmodel_node_relation[0];
-              $rel_label=preg_match('/^(.*[\/\#])([^\/\#]+)$/',$relation, $m)? $m[2]: $relation;
+              if (count($cmodel_node_relation)) {
+                $rel_label=$cmodel_node_relation[0][0];
+                $rel_label=preg_match('/^(.*[\/\#])([^\/\#]+)$/',$rel_label, $m)? $m[2]: $rel_label;
 						  //Now add this object as adjacent to the previous one, if not already done
-               $rel_label=preg_match('/^(.*[\:\/])([^\:\/]+)$/', $rel_label, $m)? $m[2]: $rel_label;
+                $rel_label=preg_match('/^(.*[\:\/])([^\:\/]+)$/', $rel_label, $m)? $m[2]: $rel_label;
               
-              if (!isset($vlot_settings[$cmodel_node]['relates_to'][$next_cmodel])) {
-                $vlot_settings[$cmodel_node]['relates_to'][$next_cmodel]=array($cmodel_node_relation[0]=>$rel_label);
-              }
-              if (!isset($vlot_settings[$cmodel_node]['relates_to'][$next_cmodel][$cmodel_node_relation[0]])) {
-                  $vlot_settings[$cmodel_node]['relates_to'][$next_cmodel][$cmodel_node_relation[0]]=$rel_label;
+                if (!isset($vlot_settings[$cmodel_node]['relates_to'][$next_cmodel])) {
+                  $vlot_settings[$cmodel_node]['relates_to'][$next_cmodel]=array($cmodel_node_relation[0][0]=>$rel_label);
                 }
+                if (!isset($vlot_settings[$cmodel_node]['relates_to'][$next_cmodel][$cmodel_node_relation[0][0]])) {
+                  $vlot_settings[$cmodel_node]['relates_to'][$next_cmodel][$cmodel_node_relation[0][0]]=$rel_label;
+                }
+              }  
             }
           } 
         }
       }
-      dpm($form_state['islandora_ontologies_vlot']);
+      //dpm($form_state['islandora_ontologies_vlot']);
       
       
       

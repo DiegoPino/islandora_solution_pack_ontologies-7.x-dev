@@ -162,14 +162,14 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 				);
 				$form['obj']['msg'] = array(
 					'#markup'=>t('<strong>Select a relationship first</strong>'),
-					'#access'=>empty($value_relationship),
+					'#access'=>(empty($value_relationship) || empty($value_subjectCmodel)),
 				);
 				$form['obj']['target'] = array(
 					'#type' => 'textfield',
 					'#title' => t('Target object'),
 					'#required' => TRUE,
 					'#autocomplete_path' => textfield_autocomplete_value($value_relationship,$form_state['islandora_ontologies']['restrictions'],$value_subjectCmodel),
-					'#access'=>!empty($value_relationship),
+					'#access'=>(!empty($value_relationship) && !empty($value_subjectCmodel)),
 					//Autocomplete_path, must be dinamic added to allow only objects of restricted class for this property 
 				);
 				$form['obj']['restriction']=array(
@@ -251,7 +251,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 			};
 
 			function textfield_namespace_value($value_relationship,$possible_relations,$subject) {
-				if (!empty($value_relationship)) {
+				 if ((!empty($value_relationship)) && (!empty($subject))) {
 					list($ontology,$property)=explode(" ",$value_relationship);
 					//dpm($possible_relations[$subject]['posiblerels_complete']);
 					$value_ns = $possible_relations[$subject]['posiblerels_complete'][$ontology][$property]['ns'];
@@ -260,8 +260,8 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 			};
 
 			function textfield_description_value($value_relationship,$possible_relations,$subject) {
-  
-				if (!empty($value_relationship)) {
+				
+        if ((!empty($value_relationship)) && (!empty($subject))) {
 					list($ontology,$property)=explode(" ",$value_relationship);
 					$value_description=$possible_relations[$subject]['posiblerels_complete'][$ontology][$property]['comment'];
 				}
@@ -269,7 +269,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 			}
 			function textfield_autocomplete_value($value_relationship,$restrictionson_properties,$subject) {
 				$autocomplete_target='islandora/relationships/autocomplete/target/';
-				if (!empty($value_relationship)) {
+				if ((!empty($value_relationship)) && (!empty($subject))) {
 					list($ontology,$property)=explode(" ",$value_relationship);
 					if ($restrictionson_properties[$subject][$ontology][$property]['onClass'])
 					{
@@ -285,15 +285,18 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 
 			function items_restrictions_value($value_relationship,$restrictionson_properties,$subject) {
 				$value_restrictions=array();
-				if (!empty($value_relationship)) {
+				if ((!empty($value_relationship)) && (!empty($subject))) {
 					list($ontology,$property)=explode(" ",$value_relationship);//We should give more info on this...
          
 					if ($restrictionson_properties[$subject][$ontology][$property]['allowsmore'])
 						{
-					$value_restrictions[]=t('<strong>You can add more of this relations</strong>');
+					$value_restrictions[]=t('<strong>You can add more relations</strong>');
           $value_restrictions[]=t('You have: ').$restrictionson_properties[$subject][$ontology][$property]['currentnum'];	
            $value_restrictions[]=t('Your Maximum is ').$restrictionson_properties[$subject][$ontology][$property]['currentmax'];	
-					$value_restrictions[]=t('<strong>To Objects of type: </strong>').$restrictionson_properties[$subject][$ontology][$property]['onClass'];
+					 $current_class = explode('/', $restrictionson_properties[$subject][$ontology][$property]['onClass']);
+          $value_restrictions[]=t('<strong>To Objects of type: </strong>').$current_class[1];
+            
+            ;
 					
             }
 					else
@@ -305,12 +308,13 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 					
 					if ($restrictionson_properties[$subject][$ontology][$property]['inverse'])
 						{
-							
+            
 						$value_restrictions[]=t('<strong>This relation implements an inverse one: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverse']['localname'];	
 						}
 					if ($restrictionson_properties[$subject][$ontology][$property]['inverseof'])
 						{
-						$value_restrictions[]=t('<strong>This relation is the inverse of: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverseof'].t('<p>If you wan´t both relations to be added, then you must do this from the target Object</p>');	
+           
+						$value_restrictions[]=t('<strong>This relation is the inverse of: </strong>').$restrictionson_properties[$subject][$ontology][$property]['inverseof']['localname'].t('<p>If you want both relations to be added, then you must do this from the target Object</p>');	
 						}	
 	 			    
 				}
