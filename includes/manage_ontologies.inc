@@ -179,9 +179,9 @@ function islandora_ontologies_parsed_vocabulary_view_form_submit(array $form, ar
 	 */
 function islandora_ontologies_manage_relations(AbstractObject $object) {
   	module_load_include('inc', 'islandora_ontologies', 'includes/utilities');
-	module_load_include('inc', 'islandora_ontologies', 'includes/add_relation');
-	module_load_include('inc', 'islandora_ontologies', 'includes/del_relation');
-  module_load_include('inc', 'islandora_ontologies', 'includes/vlot_relation');
+	  module_load_include('inc', 'islandora_ontologies', 'includes/add_relation');
+	  module_load_include('inc', 'islandora_ontologies', 'includes/del_relation');
+    module_load_include('inc', 'islandora_ontologies', 'includes/vlot_relation');
 	
 	  $return_form = array(
 	    'manage_relations' => array(),
@@ -208,7 +208,7 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	  $access = array(
 	    'add_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
 	    'del_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
-      //'vlot_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
+      'vlot_relationships' => islandora_object_access_callback(ISLANDORA_MANAGE_PROPERTIES, $object),
 	  );
 	 
 	  // Build forms for only the accessible elements.
@@ -218,14 +218,14 @@ function islandora_ontologies_manage_relations_form(array $form_state, AbstractO
 	    $forms[$element] = $accessible ? drupal_get_form($form, $object) : NULL;
 	  }
 	  
-	 /* $form_state['manage_relations']['vlot'] = array(
+	  $form_state['manage_relations']['vlot'] = array(
 	    '#id' => 'visual-manage-relations',
 	    '#group' => 'manage_relations',
 	    '#access' => $access['del_relationships'] && $access['del_relationships'],
 	    '#type' => 'fieldset',
 	    '#title' => t('Add or remove relationships visually'),
 	    'form' => $forms['vlot_relationships'],
-	  );*/
+	  );
     $form_state['manage_relations']['add_relationships'] = array(
 	    '#id' => 'add-relations',
 	    '#group' => 'manage_relations',

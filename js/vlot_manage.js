@@ -2,8 +2,11 @@
 	
   Drupal.behaviors.vlot_manage = {
     attach: function(context, settings) {
+      $('#visual-manage-relations', context).once('vlot-showmanage', function () {
+      
       /* Our processing, we take an adjacency graph from php*/
-     
+      console.log(context);
+      console.log(settings); 
       var network = null;
       var visnodes = new vis.DataSet();
       var visedges = new vis.DataSet();
@@ -14,6 +17,7 @@
       $(settings.vlot_manage).each(function () {
         if (this.graphId) {
           container = $('#'+this.graphId).get(0);
+          console.log(container);
           var data = {
             nodes: visnodes,
             edges: visedges
@@ -124,7 +128,7 @@
               },
             },
             edges: {style:"arrow"},
-            smoothCurves:false,
+            smoothCurves:true,
             stabilize: true,
             navigation: true,
             keyboard: false,
@@ -171,11 +175,12 @@
               }
             },
           };
-         
+          console.log(totalnodes);
+          console.log(options);
           if (totalnodes>150)
           {
             options.smoothCurves = false;
-            //options.freezeForStabilization = true;
+            options.freezeForStabilization = true;
             options.clustering = false;
           }
           if (totalnodes>150) {
@@ -186,6 +191,7 @@
             
         }
       });
+    });
     }
   }
 })(jQuery);

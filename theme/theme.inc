@@ -45,7 +45,7 @@ function theme_islandora_ontologies_ontology_management_table(array $variables) 
     'caption' => NULL,
     'colgroups' => NULL,
     'sticky' => NULL,
-    'empty' => t("No content models"),
+    'empty' => t("No Relations found"),
   );
   return theme('table', $variables);
 }

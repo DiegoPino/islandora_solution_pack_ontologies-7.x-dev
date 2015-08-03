@@ -1,19 +1,22 @@
 (function ($) { 
-	
+  var network; 
+  var vislegend; 
+  var visnodes; 
+  var visedges; 
+  var visnodesFiltered;
+  var initialGroups =[];
+  var activeGroups = [];
   Drupal.behaviors.vlot = {
+  
     attach: function(context, settings) {
-	    
-     
-
-	
+      $('#vlot-info-id', context).once('vlot-show', function () {
       /* Our processing, we take an adjacency graph from php*/
-	
-      var network = null;
-      var vislegend = new vis.DataSet();
-      var visnodes = new vis.DataSet();
-      var visedges = new vis.DataSet();
-      var initialGroups =[];
-      var activeGroups = [];
+      network = null;
+      vislegend = new vis.DataSet();
+      visnodes = new vis.DataSet();
+      visedges = new vis.DataSet();
+      initialGroups =[];
+      activeGroups = [];
       var container=null;
       var groupoptions = {};
       var nodeLabelscaling=true;
@@ -31,30 +34,20 @@
                 highlight: {
                   border: 'red',
                   background: 'red',
-                  fontColor: 'white',
+                  font: {color: 'white'},
                 },
-              },  
-              fontColor: 'white',
-              fontSize: 12,  
-              radius:20,
+              }, 
+              font: { 
+              color: 'white',
+              size: 12, },
+              shapeProperties: {borderRadius: 20,},
             };
           }   
        
-            
-            
-          
-         
-         
             // Build the group styles
-      
-              
-            
           var totalnodes = 0;
           var nodesCountByType = {};
-            
-            
-          
-         
+        
             for (var key in this.nodes) {
               if (this.nodes.hasOwnProperty(key)) {
                 totalnodes++;
@@ -101,9 +94,10 @@
                   nodesCountByType[currentGroup]=0;
                 
                 }
-                
+               
                 visnodes.add(
-                  [{
+                  [
+                    {
                     id: key.replace( /(:|\.|\[|\])/g, "\\$1"),
                     label: currentNodeLabel,
                     cmodel:currentNodeCMODEL,
@@ -113,23 +107,24 @@
                     extlink: this.nodes[key]["link"],
                     nodetype:this.nodes[key]['nodetype'],
                   }
-                ]);
+                ]
+              );
                 nodesCountByType[currentGroup]=nodesCountByType[currentGroup]+1;
                 
                 for (var relation in this.nodes[key]["relates_to"])
                 {
-
                   for (var predicate in this.nodes[key]["relates_to"][relation])
                   {
                     visedges.add(
-                      [{
+                      [
+                        {
                         from: key.replace( /(:|\.|\[|\])/g, "\\$1"),
                         to: relation.replace( /(:|\.|\[|\])/g, "\\$1" ),
                         label: '#'+this.nodes[key]["relates_to"][relation][predicate],
-                        fontSize: 9,
-               
+                        font:  {size: 9, align: 'bottom'},
                       }
-                    ]);
+                    ]
+                  );
                   }
                 }
               } 
@@ -137,12 +132,14 @@
             //Add active groups to legend
             activeGroups=initialGroups;
             for (var groupkey in activeGroups) {
-            vislegend.add({
+            vislegend.add(
+              {
               id: activeGroups[groupkey],
                 content: activeGroups[groupkey],
                 options: groupoptions[activeGroups[groupkey]],
                 nodescount: nodesCountByType[activeGroups[groupkey]],
-              });
+              }
+            );
             }  
             
             
@@ -151,39 +148,57 @@
             var options = {
               //configurePhysics:true,
               physics: {
+                enabled: true,
                 barnesHut: {
-                  enabled: true,
                   gravitationalConstant: -3000,
-                  centralGravity: 0.05,
+                  centralGravity: 0.3,
                   springLength: 95,
                   springConstant: 0.05,
-                  damping: 0.3
+                  damping: 0.2,
+                  avoidOverlap: 0,
+                },
+                solver: 'barnesHut',
+                stabilization: {
+                  enabled: true,
+                  iterations: 3000,
+                  updateInterval: 100,
+                  onlyDynamicEdges: false,
+                  fit: true
                 },
               },
-              edges: {style:"arrow"},
-              smoothCurves:true,
-              stabilize: true,
-              navigation: true,
-              keyboard: false,
-              hideEdgesOnDrag: true,
+              edges: {
+                arrows: { 
+                  to: { enabled: true, scaleFactor: 1.5, }
+                },
+              smooth: {enabled: true,
+              type: "dynamic",
+              },
+            },
+              interaction: {
+              navigationButtons: true,
+                keyboard:{enabled: true, }, 
+              hideEdgesOnDrag: true, 
+              },
+             
               groups: groupoptions 
             };
              console.log(totalnodes);
             if (totalnodes>150)
               {
-                options.smoothCurves = false;
+                options.edges.smooth.enabled = false;
                 //options.freezeForStabilization = true;
-                options.clustering = false;
+                
               }
               if (totalnodes>150) {
-                options.stabilizationIterations = 5000;
+                options.physics.stabilization.iterations = 5000;
               }
             //Let's create a dataview so we can filter out nodes by group  
-            var visnodesFiltered = new vis.DataView(visnodes, {
+            visnodesFiltered = new vis.DataView(visnodes, {
                 filter: function (item) {
                   return (jQuery.inArray(item.group,activeGroups) != -1);
                 }
-              });  
+              }
+            );  
               
               var data = {
                 nodes: visnodesFiltered,
@@ -198,7 +213,7 @@
               var allNodes = visnodes.get({returnType:"Object"});
               for (var nodekey in params.nodes)
                 {
-                  console.log(allNodes[params.nodes[nodekey]].nodetype);
+                //console.log(allNodes[params.nodes[nodekey]].nodetype);
                 if (allNodes[params.nodes[nodekey]].nodetype == 'current_node') 
                   {
                    
@@ -218,9 +233,10 @@
                     $("#vlot-info-id").html("Click an Object to select");  
                   }
               return false
-              });
+              }
+            );
               /**
-               * this function fills the external legend with content using the getLegend() function.
+               * this function fills the external legend with content using the getLegend function.
                */
               function populateExternalLegend() {
                   var vislegendData = vislegend.get();
@@ -278,8 +294,8 @@
                  }  
                  svgIcon.setAttributeNS(null, "x", svgX);
                  svgIcon.setAttributeNS(null, "y", svgY);
-                 svgIcon.setAttributeNS(null, "rx", node.options.radius/3);
-                 svgIcon.setAttributeNS(null, "ry", node.options.radius/3);
+                 svgIcon.setAttributeNS(null, "rx", node.options.shapeProperties.borderRadius/3);
+                 svgIcon.setAttributeNS(null, "ry", node.options.shapeProperties.borderRadius/3);
                  svgIcon.setAttributeNS(null, "width", width);
                  svgIcon.setAttributeNS(null, "height", height);
                  svgIcon.setAttributeNS(null, "class", "outline");
@@ -308,35 +324,49 @@
                 if (jQuery.inArray(groupId,activeGroups)!= -1 ) {
                   activeGroups.splice(jQuery.inArray(groupId,activeGroups), 1);
                   //Refresh the dataset view
-                  
+                  network.storePositions()
                   visnodesFiltered.refresh();
-                  network.freezeSimulation(true);
+                  network.stopSimulation();
+                  network.redraw();
                   container.className = container.className + " grouphidden";
                 }
                 else {
                   activeGroups.push(groupId);
                   
                   visnodesFiltered.refresh();
-                  network.freezeSimulation(false);
+                  network.startSimulation();
+                  
                   container.className = container.className.replace("grouphidden",""); 
                 }
-                  // if visible, hide
-                  /*/if (graph2d.isGroupVisible(groupId) == true) {
-                      groups.update({id:groupId, visible:false});
-                      container.className = container.className + " hidden";
-                  }
-                  else { // if invisible, show
-                      groups.update({id:groupId, visible:true});
-                      container.className = container.className.replace("hidden","");
-                  }*/
+               
               }
-              
-              
-              
               populateExternalLegend();  
           
           }
-        });
+        }
+      );
       }
+    ); //End .once
+  }
+}
+   $.fn.islandoraOntologiesVlotfaceting = function(vlotnodes) {
+    console.log(vlotnodes);
+    var vlotnodesclean = vlotnodes.map(function(node){console.log(node);return node.replace( /(:|\.|\[|\])/g, "\\$1");});
+    console.log(vlotnodesclean);
+    var min=0.1;
+    var max=0.9;
+    //var newColor = '#' + Math.floor(Math.floor(Math.random() * (max - min + 1)) + min * (255 * 255 * 255)).toString(16);
+    var newColor ='#'+((1<<24)*(Math.random()+1)|0).toString(16).substr(1);
+    console.log(newColor);
+    for (var i=0, tot = vlotnodesclean.length; i < tot; i++) {
+      visnodes.update([{id: vlotnodesclean[i], color:{background:newColor,border:newColor},borderWidth:3, font: {size:16 }}]);
     }
-  })(jQuery);
+    network.fit({nodes:vlotnodesclean,
+      animation: {             // animation object, can also be Boolean
+      duration: 500,                 // animation duration in milliseconds (Number)
+      easingFunction: "easeInOutQuad" // Animation easing function, available are:
+      }    
+    });
+   }  
+  }
+)(jQuery);
