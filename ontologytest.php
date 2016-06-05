@@ -265,7 +265,7 @@ function get_restrictions_onClasses($resource_list)
 	-ID
 	alias
 	type:TransitiveProperty
-	type:Inversof -> chequear si existe object para inverseof
+	type:Inverseof -> chequear si existe object para inverseof
 	     
 	3. Chequear de más restrictivo a menos
 	3.1 cardinality: 1 -> debe existir una sola instancia de clase owl:onClass con objecto de Onproperty
