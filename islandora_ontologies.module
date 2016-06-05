@@ -72,12 +72,7 @@ function islandora_ontologies_menu() {
     'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
     'type' => MENU_CALLBACK,
   );
-  $items['islandora_ontologies/relationships/autocomplete/cmodel/'] = array(
-    'page callback' => 'islandora_content_model_autocomplete',
-    'page arguments' => array(2),
-    'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
-    'type' => MENU_CALLBACK,
-  );
+
   $items['islandora/relationships/facetfilter/%/%'] = array(
     'page callback' => 'islandora_ontologies_ajax_facetfilter_callback',
     'file' => 'includes/callbacks.inc',
@@ -306,7 +301,6 @@ function islandora_ontologies_object_autocomplete($cmodel,$x2) {
     
   //We will also have to check if the URL is external, because of Solr Cloud
   $solr_cloud_prefix=variable_get('islandora_solrcloud_setting_uniqueid_prefix','*');
-  
 
 	$json=array();
     if (isset($_GET['q'])) {
