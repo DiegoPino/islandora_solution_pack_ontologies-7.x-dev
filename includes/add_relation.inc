@@ -268,7 +268,7 @@ function islandora_ontologies_add_relationships_form(array $form, array &$form_s
 				return empty($value_description) ? "No description" : $value_description;
 			}
 			function textfield_autocomplete_value($value_relationship,$restrictionson_properties,$subject) {
-				$autocomplete_target='islandora/relationships/autocomplete/target/';
+				$autocomplete_target='islandora_ontologies/relationships/autocomplete/target/';
 				if ((!empty($value_relationship)) && (!empty($subject))) {
 					list($ontology,$property)=explode(" ",$value_relationship);
 					if ($restrictionson_properties[$subject][$ontology][$property]['onClass'])

@@ -66,13 +66,13 @@ function islandora_ontologies_menu() {
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
-  $items['islandora/relationships/autocomplete/target/%/%'] = array(
+  $items['islandora_ontologies/relationships/autocomplete/target/%/%'] = array(
     'page callback' => 'islandora_ontologies_object_autocomplete',
     'page arguments' => array(4,5),
     'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
     'type' => MENU_CALLBACK,
   );
-  $items['islandora/relationships/autocomplete/cmodel/'] = array(
+  $items['islandora_ontologies/relationships/autocomplete/cmodel/'] = array(
     'page callback' => 'islandora_content_model_autocomplete',
     'page arguments' => array(2),
     'access arguments' => array(ISLANDORA_MANAGE_PROPERTIES),
