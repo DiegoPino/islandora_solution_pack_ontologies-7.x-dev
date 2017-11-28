@@ -1,7 +1,7 @@
 <?php
 /*
 * @file
-* Holds helper functions for islandora_red_biodiversidad.
+* Holds helper functions for Graph traversal routines
 */
 
 /**
